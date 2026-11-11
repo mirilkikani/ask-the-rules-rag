@@ -2,3 +2,5 @@ pypdf
 pdfplumber
 python-dotenv
 pytest
+sentence-transformers
+chromadb
