@@ -1,4 +1,4 @@
-"""Step 2: read PDFs and split them into chunks with page numbers and overlap.
+"""Step 2: read PDFs (pdfplumber) and split them into chunks with page numbers and overlap.
 
 Usage:
     python src/ingest.py --chunk-size 1000 --overlap 150
@@ -8,10 +8,30 @@ import json
 import re
 from pathlib import Path
 
-from pypdf import PdfReader
+import pdfplumber
 
 RAW_DIR = Path("data/raw")
 OUT_DIR = Path("data/processed")
+
+# Header/footer lines of EUR-Lex PDFs that repeat on every page (noise for search)
+# Header/footer lines of EUR-Lex PDFs that repeat on every page (noise for search)
+HEADER_PATTERNS = [
+    re.compile(r"^EN$"),                                          # AI Act header, line 1
+    re.compile(r"^OJ L, \d{1,2}\.\d{1,2}\.\d{4}$"),              # AI Act header, line 2
+    re.compile(r"^(\d+/\d+ )?ELI: http\S+( \d+/\d+)?$"),         # AI Act footer, both sides
+    re.compile(r"^.{0,30}Official Journal of the European Union.{0,30}$"),  # GDPR header
+]
+
+
+def remove_headers(raw: str) -> tuple[str, int]:
+    """Drop header/footer lines. Return cleaned text and number of removed lines."""
+    kept, removed = [], 0
+    for line in raw.splitlines():
+        if any(p.match(line.strip()) for p in HEADER_PATTERNS):
+            removed += 1
+        else:
+            kept.append(line)
+    return "\n".join(kept), removed
 
 
 def clean_text(text: str) -> str:
@@ -62,24 +82,28 @@ def main():
     all_lengths = []
 
     with out_file.open("w", encoding="utf-8") as f:
-        for pdf in pdfs:
-            lang = "de" if pdf.stem.endswith("_de") else "en"
-            reader = PdfReader(pdf)
-            doc_chunks = 0
-            for page_num, page in enumerate(reader.pages, start=1):
-                text = clean_text(page.extract_text() or "")
-                for i, chunk in enumerate(split_text(text, args.chunk_size, args.overlap)):
-                    record = {
-                        "chunk_id": f"{pdf.stem}_p{page_num}_c{i}",
-                        "doc": pdf.name,
-                        "lang": lang,
-                        "page": page_num,
-                        "text": chunk,
-                    }
-                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
-                    all_lengths.append(len(chunk))
-                    doc_chunks += 1
-            print(f"{pdf.name}: {len(reader.pages)} pages -> {doc_chunks} chunks")
+        for pdf_path in pdfs:
+            lang = "de" if pdf_path.stem.endswith("_de") else "en"
+            doc_chunks, doc_removed = 0, 0
+            with pdfplumber.open(pdf_path) as pdf:
+                n_pages = len(pdf.pages)
+                for page_num, page in enumerate(pdf.pages, start=1):
+                    raw, removed = remove_headers(page.extract_text() or "")
+                    doc_removed += removed
+                    text = clean_text(raw)
+                    for i, chunk in enumerate(split_text(text, args.chunk_size, args.overlap)):
+                        record = {
+                            "chunk_id": f"{pdf_path.stem}_p{page_num}_c{i}",
+                            "doc": pdf_path.name,
+                            "lang": lang,
+                            "page": page_num,
+                            "text": chunk,
+                        }
+                        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                        all_lengths.append(len(chunk))
+                        doc_chunks += 1
+            print(f"{pdf_path.name}: {n_pages} pages -> {doc_chunks} chunks "
+                  f"({doc_removed} header/footer lines removed)")
 
     print("-" * 50)
     print(f"Chunk size {args.chunk_size}, overlap {args.overlap}")
