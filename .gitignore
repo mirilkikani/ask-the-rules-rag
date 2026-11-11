@@ -4,3 +4,4 @@ data/raw/
 chroma_db/
 __pycache__/
 .pytest_cache/
+data/processed/
