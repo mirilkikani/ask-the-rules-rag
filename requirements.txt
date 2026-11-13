@@ -4,3 +4,4 @@ python-dotenv
 pytest
 sentence-transformers
 chromadb
+google-genai
