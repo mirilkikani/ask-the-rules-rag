@@ -18,7 +18,7 @@ load_dotenv()
 
 EMBED_MODEL = "intfloat/multilingual-e5-small"
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
-COLLECTION = "chunks_1000"
+COLLECTION = "chunks_500"
 TOP_K = 5
 MAX_QUESTION_CHARS = 500
 NOT_FOUND = "I don't know based on the provided documents."
