@@ -58,6 +58,12 @@ def build_prompt(question, chunks):
     return "SOURCES:\n\n" + "\n\n".join(parts) + f"\n\nQUESTION: {question}"
 
 
+def parse_citations(text, n_chunks):
+    """Find cited source numbers. Catches [1] and also [1, 2]."""
+    groups = re.findall(r"\[([\d,\s]+)\]", text)
+    return sorted({int(n) for g in groups for n in re.findall(r"\d+", g) if 1 <= int(n) <= n_chunks})
+
+
 def answer(question, embedder, collection, client):
     question = question.strip()[:MAX_QUESTION_CHARS]   # limit input length
 
@@ -75,11 +81,10 @@ def answer(question, embedder, collection, client):
     t2 = time.time()
 
     text = (response.text or "").strip()
-    cited = sorted({int(n) for n in re.findall(r"\[(\d+)\]", text) if 1 <= int(n) <= len(chunks)})
     return {
         "answer": text,
         "chunks": chunks,
-        "cited": cited,
+        "cited": parse_citations(text, len(chunks)),
         "refused": text == NOT_FOUND,
         "retrieval_s": t1 - t0,
         "generation_s": t2 - t1,
