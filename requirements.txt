@@ -1,8 +1,8 @@
-pypdf
-pdfplumber
-python-dotenv
-pytest
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
 sentence-transformers
-chromadb
+numpy
+pdfplumber
 google-genai
+python-dotenv
 streamlit
