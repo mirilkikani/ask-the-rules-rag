@@ -53,4 +53,68 @@ def build_prompt(question, chunks):
         f"[{i}] ({DOC_NAMES.get(c['doc'], c['doc'])}, page {c['page']})\n{c['text']}"
         for i, c in enumerate(chunks, start=1)
     ]
-    return "SOURCES:\n\n"
+    return "SOURCES:\n\n" + "\n\n".join(parts) + f"\n\nQUESTION: {question}"
+
+
+def parse_citations(text, n_chunks):
+    """Find cited source numbers. Catches [1] and also [1, 2]."""
+    groups = re.findall(r"\[([\d,\s]+)\]", text)
+    return sorted({int(n) for g in groups for n in re.findall(r"\d+", g) if 1 <= int(n) <= n_chunks})
+
+
+def answer(question, embedder, collection, client):
+    question = question.strip()[:MAX_QUESTION_CHARS]   # limit input length
+
+    t0 = time.time()
+    chunks = retrieve(question, embedder, collection)
+    t1 = time.time()
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=build_prompt(question, chunks),
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            temperature=0,                              # same question -> same answer
+        ),
+    )
+    t2 = time.time()
+
+    text = (response.text or "").strip()
+    return {
+        "answer": text,
+        "chunks": chunks,
+        "cited": parse_citations(text, len(chunks)),
+        "refused": text == NOT_FOUND,
+        "retrieval_s": t1 - t0,
+        "generation_s": t2 - t1,
+    }
+
+
+def main():
+    import chromadb                                     # only needed here, not in the app
+    from sentence_transformers import SentenceTransformer
+
+    question = " ".join(sys.argv[1:]) or "What is AI literacy?"
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key or api_key.startswith("paste_"):
+        sys.exit("Missing GEMINI_API_KEY in .env")
+
+    embedder = SentenceTransformer(EMBED_MODEL)
+    collection = chromadb.PersistentClient(path="chroma_db").get_collection(COLLECTION)
+    client = genai.Client(api_key=api_key)
+
+    r = answer(question, embedder, collection, client)
+
+    print(f"\nQUESTION: {question}\n")
+    print(f"ANSWER:\n{r['answer']}\n")
+    if r["cited"]:
+        print("CITED SOURCES:")
+        for n in r["cited"]:
+            c = r["chunks"][n - 1]
+            print(f"  [{n}] {DOC_NAMES.get(c['doc'], c['doc'])}, page {c['page']}")
+    print("\nRETRIEVED (top 5): " + ", ".join(
+        f"{DOC_NAMES.get(c['doc'], c['doc'])} p.{c['page']}" for c in r["chunks"]))
+    print(f"TIME: retrieval {r['retrieval_s']:.2f} s, Gemini {r['generation_s']:.2f} s")
+
+
+if __name__ == "__main__":
+    main()
