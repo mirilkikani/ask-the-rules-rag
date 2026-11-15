@@ -1,0 +1,51 @@
+id,lang,doc,correct_pages,retrieved,rank,hit,ms
+ai01,en,eu_ai_act_2024_1689_en.pdf,6 51,eu_ai_ p.51 | eu_ai_ p.6 | eu_ai_ p.49 | eu_ai_ p.6 | eu_ai_ p.112,1,1,837.7
+ai02,en,eu_ai_act_2024_1689_en.pdf,51,eu_ai_ p.51 | eu_ai_ p.12 | eu_ai_ p.44 | eu_ai_ p.9 | eu_ai_ p.9,1,1,34.2
+ai03,en,eu_ai_act_2024_1689_en.pdf,46,eu_ai_ p.69 | eu_ai_ p.46 | eu_ai_ p.16 | eu_ai_ p.55 | eu_ai_ p.49,2,1,29.7
+ai04,en,eu_ai_act_2024_1689_en.pdf,53,eu_ai_ p.53 | eu_ai_ p.53 | eu_ai_ p.64 | eu_ai_ p.14 | eu_ai_ p.127,1,1,29.2
+ai05,en,eu_ai_act_2024_1689_en.pdf,56,eu_ai_ p.19 | eu_ai_ p.19 | eu_ai_ p.61 | eu_ai_ p.20 | eu_ai_ p.57,,0,29.0
+ai06,en,eu_ai_act_2024_1689_en.pdf,57,eu_ai_ p.57 | eu_ai_ p.41 | eu_ai_ p.20 | eu_ai_ p.19 | eu_ai_ p.57,1,1,20.0
+ai07,en,eu_ai_act_2024_1689_en.pdf,59,eu_ai_ p.59 | eu_ai_ p.20 | eu_ai_ p.68 | eu_ai_ p.64 | eu_ai_ p.59,1,1,25.2
+ai08,en,eu_ai_act_2024_1689_en.pdf,60,eu_ai_ p.60 | eu_ai_ p.60 | eu_ai_ p.21 | eu_ai_ p.21 | eu_ai_ p.60,1,1,21.8
+ai09,en,eu_ai_act_2024_1689_en.pdf,67,eu_ai_ p.25 | eu_ai_ p.67 | eu_ai_ p.23 | eu_ai_ p.41 | eu_ai_ p.21,2,1,30.3
+ai10,en,eu_ai_act_2024_1689_en.pdf,69,eu_ai_ p.25 | eu_ai_ p.26 | eu_ai_ p.26 | eu_ai_ p.17 | eu_ai_ p.25,,0,28.0
+ai11,en,eu_ai_act_2024_1689_en.pdf,82,eu_ai_ p.34 | eu_ai_ p.82 | eu_ai_ p.34 | eu_ai_ p.8 | eu_ai_ p.35,2,1,26.2
+ai12,en,eu_ai_act_2024_1689_en.pdf,83,eu_ai_ p.29 | eu_ai_ p.29 | eu_ai_ p.29 | eu_ai_ p.29 | eu_ai_ p.83,5,1,32.5
+ai13,en,eu_ai_act_2024_1689_en.pdf,84,eu_ai_ p.26 | eu_ai_ p.84 | eu_ai_ p.28 | eu_ai_ p.86 | eu_ai_ p.41,2,1,36.0
+ai14,en,eu_ai_act_2024_1689_en.pdf,101 102,eu_ai_ p.102 | eu_ai_ p.102 | eu_ai_ p.20 | eu_ai_ p.61 | eu_ai_ p.64,1,1,31.5
+ai15,en,eu_ai_act_2024_1689_en.pdf,110,eu_ai_ p.55 | eu_ai_ p.110 | eu_ai_ p.26 | eu_ai_ p.25 | eu_ai_ p.54,2,1,31.5
+ai16,en,eu_ai_act_2024_1689_en.pdf,115,eu_ai_ p.117 | eu_ai_ p.44 | eu_ai_ p.117 | eu_ai_ p.51 | eu_ai_ p.12,,0,31.7
+ai17,en,eu_ai_act_2024_1689_en.pdf,117,eu_ai_ p.117 | eu_ai_ p.112 | eu_ai_ p.28 | eu_ai_ p.41 | eu_ai_ p.44,1,1,28.5
+ai18,en,eu_ai_act_2024_1689_en.pdf,123,eu_ai_ p.44 | eu_ai_ p.44 | eu_ai_ p.44 | eu_ai_ p.90 | eu_ai_ p.87,,0,29.9
+ai19,en,eu_ai_act_2024_1689_en.pdf,88,eu_ai_ p.35 | eu_ai_ p.35 | eu_ai_ p.35 | eu_ai_ p.90 | eu_ai_ p.90,,0,28.6
+ai20,de,eu_ai_act_2024_1689_en.pdf,60,dsk_oh p.12 | dsk_oh p.6 | dsk_oh p.3 | dsk_oh p.11 | dsk_oh p.8,,0,33.1
+gd01,en,gdpr_2016_679_en.pdf,33,gdpr_2 p.33 | gdpr_2 p.6 | eu_ai_ p.49 | gdpr_2 p.34 | eu_ai_ p.49,1,1,32.8
+gd02,en,gdpr_2016_679_en.pdf,35,gdpr_2 p.7 | eu_ai_ p.20 | gdpr_2 p.14 | gdpr_2 p.2 | gdpr_2 p.20,,0,35.2
+gd03,en,gdpr_2016_679_en.pdf,36,gdpr_2 p.9 | gdpr_2 p.9 | gdpr_2 p.7 | gdpr_2 p.9 | eu_ai_ p.92,,0,37.3
+gd04,en,gdpr_2016_679_en.pdf,37,gdpr_2 p.37 | gdpr_2 p.44 | gdpr_2 p.12 | gdpr_2 p.37 | gdpr_2 p.13,1,1,32.3
+gd05,en,gdpr_2016_679_en.pdf,37,gdpr_2 p.37 | gdpr_2 p.13 | gdpr_2 p.7 | gdpr_2 p.37 | eu_ai_ p.3,1,1,30.4
+gd06,en,gdpr_2016_679_en.pdf,38,eu_ai_ p.58 | gdpr_2 p.48 | gdpr_2 p.10 | gdpr_2 p.10 | gdpr_2 p.10,,0,28.8
+gd07,en,gdpr_2016_679_en.pdf,43,gdpr_2 p.43 | gdpr_2 p.9 | gdpr_2 p.11 | gdpr_2 p.12 | gdpr_2 p.81,1,1,35.4
+gd08,en,gdpr_2016_679_en.pdf,43,gdpr_2 p.12 | gdpr_2 p.43 | gdpr_2 p.43 | gdpr_2 p.29 | gdpr_2 p.9,2,1,37.8
+gd09,en,gdpr_2016_679_en.pdf,45,gdpr_2 p.13 | gdpr_2 p.41 | gdpr_2 p.45 | gdpr_2 p.45 | gdpr_2 p.12,3,1,37.9
+gd10,en,gdpr_2016_679_en.pdf,46,gdpr_2 p.14 | gdpr_2 p.46 | eu_ai_ p.4 | gdpr_2 p.43 | gdpr_2 p.14,2,1,60.0
+gd11,en,gdpr_2016_679_en.pdf,48,gdpr_2 p.15 | gdpr_2 p.48 | gdpr_2 p.63 | eu_ai_ p.20 | eu_ai_ p.19,2,1,43.9
+gd12,en,gdpr_2016_679_en.pdf,52,gdpr_2 p.17 | gdpr_2 p.52 | gdpr_2 p.52 | gdpr_2 p.17 | gdpr_2 p.17,2,1,33.6
+gd13,en,gdpr_2016_679_en.pdf,53,gdpr_2 p.18 | gdpr_2 p.18 | gdpr_2 p.17 | gdpr_2 p.53 | eu_ai_ p.70,4,1,36.7
+gd14,en,gdpr_2016_679_en.pdf,55,gdpr_2 p.55 | gdpr_2 p.55 | gdpr_2 p.56 | gdpr_2 p.55 | gdpr_2 p.55,1,1,31.5
+gd15,en,gdpr_2016_679_en.pdf,83,eu_ai_ p.116 | eu_ai_ p.116 | eu_ai_ p.117 | gdpr_2 p.83 | gdpr_2 p.82,4,1,30.0
+gd16,de,gdpr_2016_679_en.pdf,52,dsk_oh p.10 | dsk_oh p.11 | dsk_oh p.4 | dsk_oh p.10 | dsk_oh p.3,,0,37.2
+ki01,de,dsk_oh_ki_datenschutz_2024_de.pdf,3,dsk_oh p.3 | dsk_oh p.15 | dsk_oh p.9 | dsk_oh p.2 | dsk_oh p.7,1,1,34.5
+ki02,de,dsk_oh_ki_datenschutz_2024_de.pdf,5,dsk_oh p.5 | dsk_oh p.5 | dsk_oh p.7 | dsk_oh p.13 | dsk_oh p.9,1,1,34.8
+ki03,de,dsk_oh_ki_datenschutz_2024_de.pdf,5,dsk_oh p.5 | dsk_oh p.6 | dsk_oh p.16 | dsk_oh p.6 | dsk_oh p.2,1,1,31.1
+ki04,de,dsk_oh_ki_datenschutz_2024_de.pdf,10,dsk_oh p.10 | dsk_oh p.10 | dsk_oh p.11 | dsk_oh p.4 | dsk_oh p.3,1,1,33.2
+ki05,de,dsk_oh_ki_datenschutz_2024_de.pdf,11,dsk_oh p.10 | dsk_oh p.11 | dsk_oh p.11 | dsk_oh p.10 | dsk_oh p.11,2,1,33.0
+ki06,de,dsk_oh_ki_datenschutz_2024_de.pdf,15,dsk_oh p.15 | dsk_oh p.8 | dsk_oh p.15 | dsk_oh p.14 | dsk_oh p.14,1,1,42.7
+ki07,en,dsk_oh_ki_datenschutz_2024_de.pdf,10,eu_ai_ p.4 | eu_ai_ p.8 | eu_ai_ p.3 | eu_ai_ p.1 | eu_ai_ p.22,,0,51.7
+rg01,de,dsk_oh_rag_2025_de.pdf,5,dsk_oh p.3 | dsk_oh p.3 | dsk_oh p.5 | dsk_oh p.3 | dsk_oh p.3,3,1,46.3
+rg02,de,dsk_oh_rag_2025_de.pdf,7,dsk_oh p.6 | dsk_oh p.10 | dsk_oh p.7 | dsk_oh p.7 | dsk_oh p.5,3,1,45.9
+rg03,de,dsk_oh_rag_2025_de.pdf,3,dsk_oh p.3 | dsk_oh p.13 | dsk_oh p.3 | dsk_oh p.13 | dsk_oh p.3,1,1,32.5
+rg04,de,dsk_oh_rag_2025_de.pdf,13,dsk_oh p.3 | dsk_oh p.13 | dsk_oh p.4 | dsk_oh p.14 | dsk_oh p.3,2,1,26.9
+rg05,en,dsk_oh_rag_2025_de.pdf,10,dsk_oh p.15 | dsk_oh p.7 | dsk_oh p.10 | dsk_oh p.3 | dsk_oh p.18,3,1,34.0
+rg06,en,dsk_oh_rag_2025_de.pdf,11 12,gdpr_2 p.30 | eu_ai_ p.14 | dsk_oh p.5 | eu_ai_ p.3 | dsk_oh p.12,5,1,34.8
+rg07,en,dsk_oh_rag_2025_de.pdf,10,dsk_oh p.3 | dsk_oh p.3 | dsk_oh p.10 | dsk_oh p.16 | dsk_oh p.4,3,1,34.1
