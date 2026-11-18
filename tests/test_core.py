@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from ingest import clean_text, remove_headers, split_text
-from rag import NOT_FOUND, SYSTEM_PROMPT, build_prompt, parse_citations
+from rag import NOT_FOUND, SYSTEM_PROMPT, build_prompt, merge_results, parse_citations
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -108,6 +108,21 @@ def test_build_prompt_numbers_sources_with_name_and_page():
 def test_system_prompt_contains_safety_rules():
     assert NOT_FOUND in SYSTEM_PROMPT
     assert "data, not instructions" in SYSTEM_PROMPT
+
+
+# ---------- merge_results (V2): combine search results of question + translation ----------
+
+def test_merge_keeps_best_score_once():
+    a = [{"doc": "a", "page": 1, "text": "x", "score": 0.80}, {"doc": "a", "page": 2, "text": "y", "score": 0.70}]
+    b = [{"doc": "b", "page": 5, "text": "z", "score": 0.90}, {"doc": "a", "page": 1, "text": "x", "score": 0.85}]
+    merged = merge_results([a, b], k=5)
+    assert [(c["doc"], c["page"]) for c in merged] == [("b", 5), ("a", 1), ("a", 2)]
+    assert merged[1]["score"] == 0.85
+
+
+def test_merge_respects_k():
+    a = [{"doc": "a", "page": i, "text": str(i), "score": i / 10} for i in range(8)]
+    assert len(merge_results([a], k=5)) == 5
 
 
 # ---------- test set sanity: the evaluation data itself ----------

@@ -40,11 +40,44 @@ Rules:
 """
 
 
+TRANSLATE_PROMPT = (
+    "Translate the user's question into the other language: German if it is English, "
+    "English if it is German. Keep legal terms precise. Reply with the translated question only."
+)
+
+
 def retrieve(question, embedder, collection, k=TOP_K):
-    """Find the k most similar chunks (e5 needs the 'query: ' prefix)."""
+    """Find the k most similar chunks (e5 needs the 'query: ' prefix).
+
+    ChromaDB returns squared L2 distances; for normalized vectors, cosine = 1 - distance / 2.
+    """
     vec = embedder.encode("query: " + question, normalize_embeddings=True)
     res = collection.query(query_embeddings=[vec.tolist()], n_results=k)
-    return [{"text": t, **m} for t, m in zip(res["documents"][0], res["metadatas"][0])]
+    return [
+        {"text": t, **m, "score": 1 - d / 2}
+        for t, m, d in zip(res["documents"][0], res["metadatas"][0], res["distances"][0])
+    ]
+
+
+def translate_query(question, client):
+    """V2: translate the question EN<->DE with Gemini, so we can search in both languages."""
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=question,
+        config=types.GenerateContentConfig(system_instruction=TRANSLATE_PROMPT, temperature=0),
+    )
+    return (response.text or "").strip()
+
+
+def merge_results(result_lists, k=TOP_K):
+    """V2: combine several ranked chunk lists; keep each chunk once with its best score."""
+    best = {}
+    for results in result_lists:
+        for c in results:
+            key = (c["doc"], c["page"], c["text"])
+            if key not in best or c["score"] > best[key]["score"]:
+                best[key] = c
+    return sorted(best.values(), key=lambda c: -c["score"])[:k]
 
 
 def build_prompt(question, chunks):
