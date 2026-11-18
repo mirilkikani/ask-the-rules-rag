@@ -55,6 +55,7 @@ def main():
             rows.append({
                 "id": q["id"],
                 "lang": q["lang"],
+                "cross": int(q.get("cross_language", False)),
                 "doc": q["doc"],
                 "correct_pages": " ".join(map(str, q["correct_pages"])),
                 "retrieved": " | ".join(f"{c['doc'][:6]} p.{c['page']}" for c in chunks),
@@ -73,6 +74,8 @@ def main():
         ranks = [r["rank"] for r in rows if r["rank"]]
         en = [r for r in rows if r["lang"] == "en"]
         de = [r for r in rows if r["lang"] == "de"]
+        xl = [r for r in rows if r["cross"]]
+        same = [r for r in rows if not r["cross"]]
         summary.append({
             "chunk_size": size,
             "hit@1": pct(sum(1 for x in ranks if x <= 1), n),
@@ -81,6 +84,8 @@ def main():
             "MRR": round(sum(1 / x for x in ranks) / n, 3),
             "hit@5 EN": pct(sum(r["hit"] for r in en), len(en)),
             "hit@5 DE": pct(sum(r["hit"] for r in de), len(de)),
+            "hit@5 same-lang": pct(sum(r["hit"] for r in same), len(same)),
+            "hit@5 cross-lang": pct(sum(r["hit"] for r in xl), len(xl)),
             "median_ms": round(statistics.median(r["ms"] for r in rows), 1),
         })
 

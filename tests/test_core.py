@@ -119,9 +119,9 @@ def questions():
 
 
 def test_question_set_size_and_unique_ids(questions):
-    assert len(questions) == 60
-    assert len({q["id"] for q in questions}) == 60
-    assert sum(q["type"] == "answerable" for q in questions) == 50
+    assert len(questions) == 80
+    assert len({q["id"] for q in questions}) == 80
+    assert sum(q["type"] == "answerable" for q in questions) == 70
     assert sum(q["type"] == "refusal" for q in questions) == 10
 
 
