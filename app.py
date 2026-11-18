@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from ingest import clean_text, remove_headers, split_text  # noqa: E402
 from rag import (  # noqa: E402
     DOC_NAMES, EMBED_MODEL, GEMINI_MODEL, MAX_QUESTION_CHARS, NOT_FOUND,
-    SYSTEM_PROMPT, TOP_K, build_prompt, parse_citations,
+    SYSTEM_PROMPT, TOP_K, build_prompt, merge_results, parse_citations, translate_query,
 )
 
 APP_DATA = ROOT / "app_data"
@@ -162,6 +162,21 @@ def retrieve(question, model, chunks, vectors, k=TOP_K):
     return [{**chunks[i], "score": float(scores[i])} for i in top]
 
 
+def search_both_languages(question, client, model, chunks, vectors):
+    """V2: translate the question EN<->DE, search with both versions, keep the best 5 chunks.
+
+    If the translation call fails, search with the original question only (the app keeps working).
+    """
+    try:
+        translated = translate_query(question, client)
+    except Exception:  # noqa: BLE001
+        translated = ""
+    found = [{**c, "via": "your question"} for c in retrieve(question, model, chunks, vectors)]
+    if translated and translated.lower() != question.lower():
+        found += [{**c, "via": "translation"} for c in retrieve(translated, model, chunks, vectors)]
+    return merge_results([found]), translated
+
+
 def pdf_link(chunk):
     url = PDF_URLS.get(chunk["doc"])
     return f"{url}#page={chunk['page']}" if url else None
@@ -199,7 +214,7 @@ with st.sidebar:
     st.markdown(
         "1. **Read** 265 pages of PDFs and split them into chunks with page numbers\n"
         "2. **Embed** each chunk with a multilingual model (German + English)\n"
-        "3. **Search** the 5 chunks most similar to your question\n"
+        "3. **Translate** your question (English ↔ German) and **search** with both versions\n"
         "4. **Answer** with Gemini, only from those chunks, with page citations"
     )
 
@@ -217,7 +232,7 @@ with st.sidebar:
 
     st.markdown("### Known limits")
     st.markdown(
-        "- Questions in one language about a document in the other language often miss\n"
+        "- Two Gemini calls per question (translation + answer), so answers take a bit longer\n"
         "- Sometimes refuses although the answer is there\n"
         "- AI Act in its original 2024 version\n"
         "- Portfolio demo, not legal advice"
@@ -270,12 +285,13 @@ if run and question:
         st.stop()
     st.session_state.count += 1
 
-    t0 = time.time()
-    sources = retrieve(question, model, chunks, vectors)
-    t1 = time.time()
+    client = get_client(api_key)
     try:
-        with st.spinner("Searching the documents and writing the answer..."):
-            response = get_client(api_key).models.generate_content(
+        with st.spinner("Translating, searching the documents and writing the answer..."):
+            t0 = time.time()
+            sources, translated = search_both_languages(question, client, model, chunks, vectors)
+            t1 = time.time()
+            response = client.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=build_prompt(question, sources),
                 config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, temperature=0),
@@ -288,7 +304,7 @@ if run and question:
 
     text = (response.text or "").strip()
     cited = parse_citations(text, len(sources))
-    timing = f"Search {t1 - t0:.2f} s · Gemini {t2 - t1:.2f} s"
+    timing = f"Translate + search {t1 - t0:.2f} s · Answer {t2 - t1:.2f} s"
 
     if text == NOT_FOUND:
         st.markdown(
@@ -325,7 +341,11 @@ if run and question:
             )
 
     with st.expander("How this answer was found"):
-        st.caption("The 5 chunks with the highest similarity to your question. "
+        if translated:
+            st.markdown(f"**Also searched as:** {translated}")
+        else:
+            st.caption("Translation was not available, so only your original question was searched.")
+        st.caption("The 5 chunks with the highest similarity, from both searches together. "
                    "Gemini only sees these 5 and must cite them.")
         st.dataframe(
             [
@@ -334,6 +354,7 @@ if run and question:
                     "Document": DOC_NAMES.get(c["doc"], c["doc"]),
                     "Page": c["page"],
                     "Similarity": round(c["score"], 3),
+                    "Found by": c["via"],
                     "Cited": "yes" if r in cited else "",
                 }
                 for r, c in enumerate(sources, start=1)
