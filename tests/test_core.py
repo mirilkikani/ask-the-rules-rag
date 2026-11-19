@@ -145,3 +145,17 @@ def test_answerable_questions_have_correct_pages(questions):
         if q["type"] == "answerable":
             assert q["correct_pages"], q["id"]
             assert all(isinstance(p, int) and p > 0 for p in q["correct_pages"]), q["id"]
+
+
+# ---------- V2: answer judge ----------
+
+def test_judge_parses_json_label():
+    from eval_judge import parse_judgement
+    assert parse_judgement('{"label": "Correct", "reason": "matches page 49"}') == ("correct", "matches page 49")
+    assert parse_judgement('```json\n{"label": "wrong", "reason": "fine is EUR 35M"}\n```')[0] == "wrong"
+
+
+def test_judge_unknown_label_is_unclear():
+    from eval_judge import parse_judgement
+    assert parse_judgement('{"label": "maybe", "reason": "?"}')[0] == "unclear"
+    assert parse_judgement("no json here")[0] == "unclear"
