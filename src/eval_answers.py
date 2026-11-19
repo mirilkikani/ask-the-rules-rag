@@ -1,12 +1,14 @@
-"""Step 5b: test Gemini's answers on all 60 questions (50 answerable + 10 refusal).
+"""Step 5b: test Gemini's answers on all 80 questions (70 answerable + 10 refusal).
 
 Measures:
 - answerable questions: did it answer (not refuse) and cite a correct page?
+  (also split into same-language and cross-language questions)
 - refusal questions: did it refuse correctly?
-- time per question
+- time per question (including the translation call in V2 mode)
 
 Usage:
-    python src/eval_answers.py --chunk-size 500
+    python src/eval_answers.py                 # v1: search with the question only
+    python src/eval_answers.py --translate     # V2: question + Gemini translation (EN<->DE)
 """
 import argparse
 import csv
@@ -26,18 +28,18 @@ from rag import EMBED_MODEL, GEMINI_MODEL, answer
 
 QUESTIONS = Path("eval/questions.jsonl")
 OUT_DIR = Path("eval/results")
-WAIT_SECONDS = 5          # pause between Gemini calls (free tier rate limit)
+WAIT_SECONDS = 5          # pause between questions (free tier rate limit)
 
 
 def pct(part, whole):
     return f"{part}/{whole} ({part / whole:.0%})" if whole else "-"
 
 
-def ask_with_retry(q, embedder, collection, client):
+def ask_with_retry(q, embedder, collection, client, translate):
     """One retry after 30 s if Gemini returns an error (e.g. rate limit 429)."""
     for attempt in (1, 2):
         try:
-            return answer(q, embedder, collection, client), ""
+            return answer(q, embedder, collection, client, translate=translate), ""
         except Exception as e:  # noqa: BLE001
             if attempt == 1:
                 print(f"   error, retry in 30 s: {str(e)[:80]}")
@@ -49,7 +51,9 @@ def ask_with_retry(q, embedder, collection, client):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--chunk-size", type=int, default=500)
+    parser.add_argument("--translate", action="store_true", help="V2: also search with the translated question")
     args = parser.parse_args()
+    mode = "translate" if args.translate else "question_only"
 
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
@@ -60,12 +64,13 @@ def main():
     embedder = SentenceTransformer(EMBED_MODEL)
     collection = chromadb.PersistentClient(path="chroma_db").get_collection(f"chunks_{args.chunk_size}")
     client = genai.Client(api_key=api_key)
-    print(f"{len(questions)} questions, chunk size {args.chunk_size}, model {GEMINI_MODEL}\n")
+    print(f"{len(questions)} questions, chunk size {args.chunk_size}, mode {mode}, model {GEMINI_MODEL}\n")
 
     rows = []
     for i, q in enumerate(questions, start=1):
-        r, error = ask_with_retry(q["question"], embedder, collection, client)
-        row = {"id": q["id"], "type": q["type"], "lang": q["lang"], "error": error}
+        r, error = ask_with_retry(q["question"], embedder, collection, client, args.translate)
+        row = {"id": q["id"], "type": q["type"], "lang": q["lang"],
+               "cross": int(bool(q.get("cross_language"))), "error": error}
         if r:
             cited = [r["chunks"][n - 1] for n in r["cited"]]
             correct_cited = q["type"] == "answerable" and any(
@@ -79,7 +84,8 @@ def main():
                 "correct_page_retrieved": int(correct_retrieved),
                 "correct_page_cited": int(correct_cited),
                 "cited_pages": " | ".join(f"{c['doc'][:12]} p.{c['page']}" for c in cited),
-                "seconds": round(r["retrieval_s"] + r["generation_s"], 2),
+                "seconds": round(r["translate_s"] + r["retrieval_s"] + r["generation_s"], 2),
+                "translation": r["translation"].replace("\n", " "),
                 "answer": r["answer"].replace("\n", " "),
             })
         rows.append(row)
@@ -88,9 +94,9 @@ def main():
         time.sleep(WAIT_SECONDS)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_file = OUT_DIR / f"answers_{args.chunk_size}.csv"
-    fields = ["id", "type", "lang", "refused", "correct_page_retrieved", "correct_page_cited",
-              "cited_pages", "seconds", "error", "answer"]
+    out_file = OUT_DIR / f"answers_{args.chunk_size}_{mode}.csv"
+    fields = ["id", "type", "lang", "cross", "refused", "correct_page_retrieved", "correct_page_cited",
+              "cited_pages", "seconds", "error", "translation", "answer"]
     with out_file.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
@@ -100,12 +106,16 @@ def main():
     ans = [r for r in ok if r["type"] == "answerable"]
     ref = [r for r in ok if r["type"] == "refusal"]
     retrieved = [r for r in ans if r["correct_page_retrieved"]]
+    same = [r for r in ans if not r["cross"]]
+    cross = [r for r in ans if r["cross"]]
 
-    print("\nRESULTS")
+    print(f"\nRESULTS ({mode})")
     print(f"Errors: {len(rows) - len(ok)}")
     print(f"Answerable: answered (not refused)        {pct(sum(1 for r in ans if not r['refused']), len(ans))}")
     print(f"Answerable: correct page cited            {pct(sum(r['correct_page_cited'] for r in ans), len(ans))}")
     print(f"  ...when correct page was in top 5       {pct(sum(r['correct_page_cited'] for r in retrieved), len(retrieved))}")
+    print(f"  ...same-language questions              {pct(sum(r['correct_page_cited'] for r in same), len(same))}")
+    print(f"  ...cross-language questions             {pct(sum(r['correct_page_cited'] for r in cross), len(cross))}")
     print(f"Answerable: wrongly refused               {pct(sum(r['refused'] for r in ans), len(ans))}")
     print(f"Refusal questions: correctly refused      {pct(sum(r['refused'] for r in ref), len(ref))}")
     print(f"Median time per question: {statistics.median(r['seconds'] for r in ok):.2f} s")

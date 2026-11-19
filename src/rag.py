@@ -95,12 +95,20 @@ def parse_citations(text, n_chunks):
     return sorted({int(n) for g in groups for n in re.findall(r"\d+", g) if 1 <= int(n) <= n_chunks})
 
 
-def answer(question, embedder, collection, client):
+def answer(question, embedder, collection, client, translate=False):
+    """Retrieve, then let Gemini answer from the top chunks.
+
+    translate=True (V2): also search with the EN<->DE translation and merge both result lists.
+    """
     question = question.strip()[:MAX_QUESTION_CHARS]   # limit input length
 
     t0 = time.time()
-    chunks = retrieve(question, embedder, collection)
+    translation = translate_query(question, client) if translate else ""
     t1 = time.time()
+    chunks = retrieve(question, embedder, collection)
+    if translation and translation.lower() != question.lower():
+        chunks = merge_results([chunks, retrieve(translation, embedder, collection)])
+    t2 = time.time()
     response = client.models.generate_content(
         model=GEMINI_MODEL,
         contents=build_prompt(question, chunks),
@@ -109,16 +117,18 @@ def answer(question, embedder, collection, client):
             temperature=0,                              # same question -> same answer
         ),
     )
-    t2 = time.time()
+    t3 = time.time()
 
     text = (response.text or "").strip()
     return {
         "answer": text,
+        "translation": translation,
         "chunks": chunks,
         "cited": parse_citations(text, len(chunks)),
         "refused": text == NOT_FOUND,
-        "retrieval_s": t1 - t0,
-        "generation_s": t2 - t1,
+        "translate_s": t1 - t0,
+        "retrieval_s": t2 - t1,
+        "generation_s": t3 - t2,
     }
 
 
