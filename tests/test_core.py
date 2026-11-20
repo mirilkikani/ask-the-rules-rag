@@ -5,7 +5,9 @@ from pathlib import Path
 import pytest
 
 from ingest import clean_text, remove_headers, split_text
-from rag import NOT_FOUND, SYSTEM_PROMPT, build_prompt, merge_results, parse_citations
+from rag import (
+    NOT_FOUND, SYSTEM_PROMPT, build_prompt, detect_language, is_refusal, merge_results, parse_citations,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -102,7 +104,7 @@ def test_build_prompt_numbers_sources_with_name_and_page():
     prompt = build_prompt("When?", chunks)
     assert "[1] (GDPR, page 52)" in prompt
     assert "[2] (DSK RAG-Systeme, page 5)" in prompt
-    assert prompt.endswith("QUESTION: When?")
+    assert "QUESTION: When?" in prompt
 
 
 def test_system_prompt_contains_safety_rules():
@@ -159,3 +161,30 @@ def test_judge_unknown_label_is_unclear():
     from eval_judge import parse_judgement
     assert parse_judgement('{"label": "maybe", "reason": "?"}')[0] == "unclear"
     assert parse_judgement("no json here")[0] == "unclear"
+
+
+# ---------- V2: answer language ----------
+
+def test_detect_language():
+    assert detect_language("What does the AI Act say about human oversight?") == "en"
+    assert detect_language("Wann muss ein Datenschutzbeauftragter benannt werden?") == "de"
+    assert detect_language("Was ist ein RAG-System?") == "de"
+
+
+def test_detect_language_on_all_test_questions():
+    questions = [json.loads(line) for line in (ROOT / "eval" / "questions.jsonl").open(encoding="utf-8")]
+    assert all(detect_language(q["question"]) == q["lang"] for q in questions)
+
+
+def test_prompt_names_answer_language():
+    chunk = {"doc": "dsk_oh_rag_2025_de.pdf", "page": 3, "text": "Ein RAG-System ..."}
+    assert build_prompt("What is a RAG system?", [chunk]).endswith("ANSWER LANGUAGE: English")
+    assert build_prompt("Was ist ein RAG-System?", [chunk]).endswith("ANSWER LANGUAGE: German")
+
+
+def test_is_refusal_accepts_small_changes_only():
+    assert is_refusal(NOT_FOUND)
+    assert is_refusal("Ich don't know based on the provided documents.")
+    assert not is_refusal("The deadline is 72 hours [1].")
+    long_answer = "Based on the provided documents, the controller must notify the authority within 72 hours " * 2
+    assert not is_refusal(long_answer)

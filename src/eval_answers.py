@@ -5,6 +5,7 @@ Measures:
   (also split into same-language and cross-language questions)
 - refusal questions: did it refuse correctly?
 - time per question (including the translation call in V2 mode)
+- answer language: is the answer in the language of the question?
 
 Usage:
     python src/eval_answers.py                 # v1: search with the question only
@@ -24,7 +25,7 @@ from dotenv import load_dotenv
 from google import genai
 from sentence_transformers import SentenceTransformer
 
-from rag import EMBED_MODEL, GEMINI_MODEL, answer
+from rag import EMBED_MODEL, GEMINI_MODEL, answer, detect_language
 
 QUESTIONS = Path("eval/questions.jsonl")
 OUT_DIR = Path("eval/results")
@@ -87,6 +88,7 @@ def main():
                 "seconds": round(r["translate_s"] + r["retrieval_s"] + r["generation_s"], 2),
                 "translation": r["translation"].replace("\n", " "),
                 "answer": r["answer"].replace("\n", " "),
+                "answer_lang_ok": int(r["refused"] or detect_language(r["answer"]) == q["lang"]),
             })
         rows.append(row)
         status = "ERROR" if error else ("refused" if row["refused"] else "answered")
@@ -96,7 +98,7 @@ def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_file = OUT_DIR / f"answers_{args.chunk_size}_{mode}.csv"
     fields = ["id", "type", "lang", "cross", "refused", "correct_page_retrieved", "correct_page_cited",
-              "cited_pages", "seconds", "error", "translation", "answer"]
+              "cited_pages", "seconds", "answer_lang_ok", "error", "translation", "answer"]
     with out_file.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
@@ -118,6 +120,9 @@ def main():
     print(f"  ...cross-language questions             {pct(sum(r['correct_page_cited'] for r in cross), len(cross))}")
     print(f"Answerable: wrongly refused               {pct(sum(r['refused'] for r in ans), len(ans))}")
     print(f"Refusal questions: correctly refused      {pct(sum(r['refused'] for r in ref), len(ref))}")
+    answered = [r for r in ans if not r["refused"]]
+    print(f"Answers in the question's language        {pct(sum(r['answer_lang_ok'] for r in answered), len(answered))}")
+    print("  wrong language: " + (", ".join(r["id"] for r in answered if not r["answer_lang_ok"]) or "none"))
     print(f"Median time per question: {statistics.median(r['seconds'] for r in ok):.2f} s")
     print(f"\nSaved to {out_file}")
 

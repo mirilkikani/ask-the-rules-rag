@@ -22,10 +22,20 @@ from sentence_transformers import SentenceTransformer
 
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "src"))
+# Streamlit keeps imported modules in memory between reruns. After a git push, app.py is new but an
+# old rag.py could still be in memory (this caused "cannot import name 'merge_results'" on 19.11).
+# Reloading makes sure the app always uses the newest files.
+import importlib  # noqa: E402
+
+import ingest  # noqa: E402
+import rag  # noqa: E402
+
+importlib.reload(ingest)
+importlib.reload(rag)
 from ingest import clean_text, remove_headers, split_text  # noqa: E402
 from rag import (  # noqa: E402
     DOC_NAMES, EMBED_MODEL, GEMINI_MODEL, MAX_QUESTION_CHARS, NOT_FOUND,
-    SYSTEM_PROMPT, TOP_K, build_prompt, merge_results, parse_citations, translate_query,
+    SYSTEM_PROMPT, TOP_K, build_prompt, is_refusal, merge_results, parse_citations, translate_query,
 )
 
 APP_DATA = ROOT / "app_data"
@@ -306,7 +316,7 @@ if run and question:
     cited = parse_citations(text, len(sources))
     timing = f"Translate + search {t1 - t0:.2f} s · Answer {t2 - t1:.2f} s"
 
-    if text == NOT_FOUND:
+    if is_refusal(text):
         st.markdown(
             "<div class='refusal-card'><div class='refusal-title'>Not covered by these documents</div>"
             "I only answer from the EU AI Act, the GDPR and two German DSK guides, and I couldn't find "
