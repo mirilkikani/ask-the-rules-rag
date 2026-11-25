@@ -230,13 +230,13 @@ with st.sidebar:
     )
 
     st.markdown("### Measured quality")
-    st.caption("60 test questions with known correct pages")
+    st.caption("80 test questions (70 with known correct pages, 10 the bot must refuse)")
     st.markdown(
         "<div class='stat-grid'>"
-        "<div class='stat'><div class='stat-num'>86%</div><div class='stat-label'>correct page in top 5 (43/50)</div></div>"
+        "<div class='stat'><div class='stat-num'>91%</div><div class='stat-label'>correct page in top 5 (64/70)</div></div>"
+        "<div class='stat'><div class='stat-num'>77–79%</div><div class='stat-label'>correct page cited (2 runs)</div></div>"
         "<div class='stat'><div class='stat-num'>10/10</div><div class='stat-label'>off-topic and attack questions refused</div></div>"
-        "<div class='stat'><div class='stat-num'>86%</div><div class='stat-label'>page cited when found (37/43)</div></div>"
-        "<div class='stat'><div class='stat-num'>17</div><div class='stat-label'>automated tests on every push</div></div>"
+        "<div class='stat'><div class='stat-num'>8/8</div><div class='stat-label'>hidden attacks in documents resisted</div></div>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -244,7 +244,7 @@ with st.sidebar:
     st.markdown("### Known limits")
     st.markdown(
         "- Two Gemini calls per question (translation + answer), so answers take a bit longer\n"
-        "- Sometimes refuses although the answer is there\n"
+        "- Sometimes refuses although the answer is there (about 1 in 10 test questions)\n"
         "- AI Act in its original 2024 version\n"
         "- Portfolio demo, not legal advice"
     )
@@ -257,7 +257,7 @@ st.markdown(
     "<div class='hero-sub'>Ask a question in English or German. The answer comes only from the official "
     "documents and shows the page it is based on.</div>"
     + pill("265 pages", "#1f6fd1") + pill("English and German", "#1f6fd1")
-    + pill("86% correct page in top 5", "#14866d") + pill("10/10 attacks refused", "#14866d"),
+    + pill("91% correct page in top 5", "#14866d") + pill("10/10 attacks refused", "#14866d"),
     unsafe_allow_html=True,
 )
 
