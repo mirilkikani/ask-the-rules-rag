@@ -65,7 +65,7 @@ DOC_COLORS = {
 }
 # (button label, full question)
 EXAMPLES = [
-    ("AI Act: AI literacy", "What is AI literacy?"),
+    ("DE → AI Act: KI-Kompetenz", "Was ist KI-Kompetenz?"),   # German question, English law
     ("GDPR: breach deadline", "Within how many hours must a personal data breach be reported?"),
     ("DSK: Was ist RAG?", "Was ist ein RAG-System?"),
     ("Off-topic test", "What is the capital of France?"),
@@ -90,6 +90,7 @@ h1 { letter-spacing: -0.02em; }
 [data-testid="stFormSubmitButton"] > button { border-radius: 10px; padding: 0.35rem 1.4rem; }
 [data-testid="stTextInput"] input { border-radius: 10px; }
 
+.via-badge { display: inline-block; margin-top: 0.55rem; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; color: #8250df; background: #8250df14; border: 1px solid #8250df40; }
 .answer-card { border: 1px solid #d8dee4; border-left: 4px solid #2a78d6; border-radius: 0 12px 12px 0; padding: 1rem 1.25rem; background: #ffffff; margin: 0.6rem 0 0.4rem; font-size: 1.02rem; line-height: 1.7; color: #1f2328; }
 .cite { display: inline-block; background: #e8f1fc; color: #1f6fd1; border-radius: 6px; padding: 0 6px; font-size: 0.78rem; font-weight: 500; margin-left: 2px; vertical-align: 1px; }
 .meta { color: #6e7781; font-size: 0.8rem; margin-top: 0.5rem; }
@@ -186,6 +187,23 @@ def search_both_languages(question, client, model, chunks, vectors):
     if translated and translated.lower() != question.lower():
         found += [{**c, "via": "translation"} for c in retrieve(translated, model, chunks, vectors)]
     return merge_results([found]), translated
+
+
+@st.cache_data(ttl=24 * 3600, max_entries=200, show_spinner=False)
+def run_pipeline(question, _client, _model, _chunks, _vectors):
+    """Translate, search and answer. Cached for 24 h: the same question (e.g. an example button)
+    is answered instantly and does not use the free Gemini quota again. Errors are not cached."""
+    t0 = time.time()
+    sources, translated = search_both_languages(question, _client, _model, _chunks, _vectors)
+    t1 = time.time()
+    response = _client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=build_prompt(question, sources),
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, temperature=0),
+    )
+    t2 = time.time()
+    return {"sources": sources, "translated": translated, "text": (response.text or "").strip(),
+            "search_s": t1 - t0, "answer_s": t2 - t1}
 
 
 def pdf_link(chunk):
@@ -299,23 +317,22 @@ if run and question:
     client = get_client(api_key)
     try:
         with st.spinner("Translating, searching the documents and writing the answer..."):
-            t0 = time.time()
-            sources, translated = search_both_languages(question, client, model, chunks, vectors)
-            t1 = time.time()
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=build_prompt(question, sources),
-                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, temperature=0),
-            )
+            started = time.time()
+            result = run_pipeline(question, client, model, chunks, vectors)
+            from_cache = time.time() - started < 0.05      # a real Gemini call takes much longer
     except Exception as e:  # noqa: BLE001
         st.error("Gemini is busy or the free limit was reached. Please try again in a minute.")
         st.caption(f"Details: {str(e)[:200]}")
         st.stop()
-    t2 = time.time()
 
-    text = (response.text or "").strip()
+    sources, translated, text = result["sources"], result["translated"], result["text"]
     cited = parse_citations(text, len(sources))
-    timing = f"Translate + search {t1 - t0:.2f} s · Answer {t2 - t1:.2f} s"
+    timing = f"Translate + search {result['search_s']:.2f} s · Answer {result['answer_s']:.2f} s"
+    if from_cache:
+        timing = "Answered instantly (same question asked before) · first time: " + timing
+    via_translation = any(sources[n - 1]["via"] == "translation" for n in cited)
+    badge = ("<div class='via-badge'>🌐 Found thanks to the English ↔ German translation</div>"
+             if via_translation and not is_refusal(text) else "")
 
     if is_refusal(text):
         st.markdown(
@@ -330,7 +347,7 @@ if run and question:
             col.button(label, key=f"suggest_{label}", help=question_text,
                        on_click=ask_example, args=(question_text,), width="stretch")
     else:
-        st.markdown(f"<div class='answer-card'>{answer_html(text)}<div class='meta'>{timing}</div></div>",
+        st.markdown(f"<div class='answer-card'>{answer_html(text)}{badge}<div class='meta'>{timing}</div></div>",
                     unsafe_allow_html=True)
 
     if cited:
