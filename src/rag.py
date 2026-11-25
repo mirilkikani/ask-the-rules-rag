@@ -150,6 +150,19 @@ def parse_citations(text, n_chunks):
     return sorted({int(n) for g in groups for n in re.findall(r"\d+", g) if 1 <= int(n) <= n_chunks})
 
 
+def generate(question, chunks, client):
+    """Let Gemini answer the question from the given chunks only (also used by the red-team test)."""
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=build_prompt(question, chunks),
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            temperature=0,                              # same question -> same answer
+        ),
+    )
+    return (response.text or "").strip()
+
+
 def answer(question, embedder, collection, client, translate=False):
     """Retrieve, then let Gemini answer from the top chunks.
 
@@ -164,17 +177,9 @@ def answer(question, embedder, collection, client, translate=False):
     if translation and translation.lower() != question.lower():
         chunks = merge_results([chunks, retrieve(translation, embedder, collection)])
     t2 = time.time()
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=build_prompt(question, chunks),
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            temperature=0,                              # same question -> same answer
-        ),
-    )
+    text = generate(question, chunks, client)
     t3 = time.time()
 
-    text = (response.text or "").strip()
     return {
         "answer": text,
         "translation": translation,
