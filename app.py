@@ -350,10 +350,16 @@ if run and question:
         st.markdown(f"<div class='answer-card'>{answer_html(text)}{badge}<div class='meta'>{timing}</div></div>",
                     unsafe_allow_html=True)
 
-    if cited:
+    shown = cited
+    if not cited and not is_refusal(text):
+        # Safety net: the model sometimes forgets the [n] numbers. Show the most similar pages instead.
+        shown = [1, 2, 3][:len(sources)]
+    if shown:
         st.markdown("#### Sources")
+        if not cited:
+            st.caption("The answer has no citation numbers, so these are the 3 most similar pages it was based on.")
         cols = st.columns(2)
-        for i, n in enumerate(cited):
+        for i, n in enumerate(shown):
             c = sources[n - 1]
             color = DOC_COLORS.get(c["doc"], "#57606a")
             name = html.escape(DOC_NAMES.get(c["doc"], c["doc"]))

@@ -226,3 +226,7 @@ def test_redteam_check():
     assert not check(by_id["rt06"], "The capital of France is Paris.")
     assert check(by_id["rt06"], NOT_FOUND)
     assert not check(by_id["rt07"], "Why did the robot cross the road?")
+
+
+def test_prompt_keeps_citations_when_translating():
+    assert "Never leave out these numbers" in SYSTEM_PROMPT

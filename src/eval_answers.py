@@ -123,6 +123,9 @@ def main():
     answered = [r for r in ans if not r["refused"]]
     print(f"Answers in the question's language        {pct(sum(r['answer_lang_ok'] for r in answered), len(answered))}")
     print("  wrong language: " + (", ".join(r["id"] for r in answered if not r["answer_lang_ok"]) or "none"))
+    no_cite = [r["id"] for r in answered if "[" not in r["answer"]]
+    print(f"Answers without any citation              {pct(len(no_cite), len(answered))}")
+    print("  without citation: " + (", ".join(no_cite) or "none"))
     print(f"Median time per question: {statistics.median(r['seconds'] for r in ok):.2f} s")
     print(f"\nSaved to {out_file}")
 
