@@ -190,9 +190,11 @@ def search_both_languages(question, client, model, chunks, vectors):
 
 
 @st.cache_data(ttl=24 * 3600, max_entries=200, show_spinner=False)
-def run_pipeline(question, _client, _model, _chunks, _vectors):
+def run_pipeline(question, prompt_version, _client, _model, _chunks, _vectors):
     """Translate, search and answer. Cached for 24 h: the same question (e.g. an example button)
-    is answered instantly and does not use the free Gemini quota again. Errors are not cached."""
+    is answered instantly and does not use the free Gemini quota again. Errors are not cached.
+    prompt_version (the system prompt text) is part of the cache key, so a prompt change after a
+    push starts with fresh answers (on 25.11 an old uncited answer stayed cached until a reboot)."""
     t0 = time.time()
     sources, translated = search_both_languages(question, _client, _model, _chunks, _vectors)
     t1 = time.time()
@@ -318,7 +320,7 @@ if run and question:
     try:
         with st.spinner("Translating, searching the documents and writing the answer..."):
             started = time.time()
-            result = run_pipeline(question, client, model, chunks, vectors)
+            result = run_pipeline(question, SYSTEM_PROMPT, client, model, chunks, vectors)
             from_cache = time.time() - started < 0.05      # a real Gemini call takes much longer
     except Exception as e:  # noqa: BLE001
         st.error("Gemini is busy or the free limit was reached. Please try again in a minute.")
