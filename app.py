@@ -35,7 +35,8 @@ importlib.reload(rag)
 from ingest import clean_text, remove_headers, split_text  # noqa: E402
 from rag import (  # noqa: E402
     DOC_NAMES, EMBED_MODEL, GEMINI_MODEL, MAX_QUESTION_CHARS, NOT_FOUND,
-    SYSTEM_PROMPT, TOP_K, build_prompt, is_refusal, merge_results, parse_citations, translate_query,
+    SYSTEM_PROMPT, TOP_K, best_snippet, build_prompt, is_refusal, merge_results, parse_citations,
+    translate_query,
 )
 
 APP_DATA = ROOT / "app_data"
@@ -339,7 +340,7 @@ if run and question:
             c = sources[n - 1]
             color = DOC_COLORS.get(c["doc"], "#57606a")
             name = html.escape(DOC_NAMES.get(c["doc"], c["doc"]))
-            snippet = html.escape(c["text"][:220] + ("..." if len(c["text"]) > 220 else ""))
+            snippet = html.escape(best_snippet(c["text"], [question, translated]))
             link = pdf_link(c)
             link_html = (f"<div class='src-link'><a href='{link}' target='_blank'>"
                          f"Open page {c['page']} in the official PDF ↗</a></div>") if link else ""

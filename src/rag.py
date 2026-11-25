@@ -79,6 +79,27 @@ def detect_language(text):
     return "de" if de > en else "en"
 
 
+def best_snippet(text, queries, width=220):
+    """V2: the part of a chunk that best matches the question, for the source cards in the app.
+
+    Tries every sentence start and keeps the window of `width` characters that contains the most
+    different question words (from the question and its translation). Falls back to the start.
+    """
+    terms = {w for q in queries if q for w in re.findall(r"[a-zäöüß]{4,}", q.lower())}
+    starts = [0] + [m.end() for m in re.finditer(r"[.;:!?]\s+", text)]
+    best_start, best_score = 0, 0
+    for start in starts:
+        window = text[start:start + width].lower()
+        score = sum(term in window for term in terms)
+        if score > best_score:
+            best_start, best_score = start, score
+    end = min(len(text), best_start + width)
+    if end < len(text) and " " in text[best_start:end]:
+        end = text.rindex(" ", best_start, end)          # do not cut a word in half
+    snippet = text[best_start:end].strip()
+    return ("..." if best_start > 0 else "") + snippet + ("..." if end < len(text) else "")
+
+
 def retrieve(question, embedder, collection, k=TOP_K):
     """Find the k most similar chunks (e5 needs the 'query: ' prefix).
 

@@ -6,7 +6,8 @@ import pytest
 
 from ingest import clean_text, remove_headers, split_text
 from rag import (
-    NOT_FOUND, SYSTEM_PROMPT, build_prompt, detect_language, is_refusal, merge_results, parse_citations,
+    NOT_FOUND, SYSTEM_PROMPT, best_snippet, build_prompt, detect_language, is_refusal, merge_results,
+    parse_citations,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -188,3 +189,20 @@ def test_is_refusal_accepts_small_changes_only():
     assert not is_refusal("The deadline is 72 hours [1].")
     long_answer = "Based on the provided documents, the controller must notify the authority within 72 hours " * 2
     assert not is_refusal(long_answer)
+
+
+# ---------- V2: source card snippet ----------
+
+def test_best_snippet_finds_matching_sentence():
+    text = ("(55) 'AI regulatory sandbox' means a controlled framework set up by a competent authority "
+            "which offers providers the possibility to develop, train, validate and test an innovative AI "
+            "system under regulatory supervision; (56) 'AI literacy' means skills, knowledge and "
+            "understanding that allow providers, deployers and affected persons to make an informed "
+            "deployment of AI systems;")
+    snippet = best_snippet(text, ["Was ist KI-Kompetenz?", "What is AI literacy?"], width=120)
+    assert snippet.startswith("...(56) 'AI literacy' means")
+
+
+def test_best_snippet_falls_back_to_start():
+    text = "First sentence here. Second sentence here."
+    assert best_snippet(text, ["unrelated question words"], width=25) == "First sentence here...."
