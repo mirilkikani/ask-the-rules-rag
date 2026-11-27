@@ -147,6 +147,9 @@ h1 { letter-spacing: -0.02em; }
 .side-link:hover { transform: translateY(-2px); border-color: #2a78d6; color: #2a78d6 !important; box-shadow: 0 4px 12px rgba(42, 120, 214, .15); }
 .side-link:active { transform: scale(.95); }
 
+.built-by { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0.2rem 0 0.9rem; }
+.built-by-name { font-weight: 600; color: #1f2328; margin-right: 4px; }
+
 /* clicks and focus */
 .stButton > button:active, button[data-testid="stBaseButton-secondary"]:active,
 [data-testid="stFormSubmitButton"] > button:active { transform: scale(.95); }
@@ -479,6 +482,12 @@ if run and question:
 # ---------- footer ----------
 
 st.divider()
+st.markdown(   # also here, because phones hide the sidebar
+    "<div class='built-by'><span class='built-by-name'>Built by Miril Kikani</span>"
+    f"<a class='side-link' href='{LINKEDIN_URL}' target='_blank'>LinkedIn ↗</a>"
+    f"<a class='side-link' href='{REPO_URL}' target='_blank'>GitHub repo ↗</a></div>",
+    unsafe_allow_html=True,
+)
 st.markdown(
     "<div class='footer'>Sources: Regulation (EU) 2024/1689 (AI Act) and Regulation (EU) 2016/679 (GDPR), "
     "© European Union, EUR-Lex, CC BY 4.0, split into chunks for search. DSK Orientierungshilfen are "
