@@ -309,14 +309,6 @@ st.markdown(CSS, unsafe_allow_html=True)
 st.session_state.setdefault("count", 0)
 
 with st.sidebar:
-    st.markdown("### Built by Miril Kikani")
-    st.markdown(
-        f"<div class='side-links'><a class='side-link' href='{LINKEDIN_URL}' target='_blank'>LinkedIn ↗</a>"
-        f"<a class='side-link' href='{REPO_URL}' target='_blank'>GitHub repo ↗</a></div>",
-        unsafe_allow_html=True,
-    )
-    st.caption("M.Sc. Big Data and Business Analytics, FOM Essen")
-
     st.markdown("### How it works")
     st.markdown(
         "1. **Read** 265 pages of PDFs and split them into chunks with page numbers\n"
@@ -482,7 +474,7 @@ if run and question:
 # ---------- footer ----------
 
 st.divider()
-st.markdown(   # also here, because phones hide the sidebar
+st.markdown(   # at the bottom (also visible on phones, where the sidebar is hidden)
     "<div class='built-by'><span class='built-by-name'>Built by Miril Kikani</span>"
     f"<a class='side-link' href='{LINKEDIN_URL}' target='_blank'>LinkedIn ↗</a>"
     f"<a class='side-link' href='{REPO_URL}' target='_blank'>GitHub repo ↗</a></div>",
