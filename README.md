@@ -1,6 +1,4 @@
-# Ask the rules: EU AI Act & GDPR answers with page citations, in English and German
-
-[![tests](https://github.com/mirilkikani/ask-the-rules-rag/actions/workflows/tests.yml/badge.svg)](https://github.com/mirilkikani/ask-the-rules-rag/actions/workflows/tests.yml)
+| [Ask the rules: RAG assistant with evaluation](https://github.com/mirilkikani/ask-the-rules-rag) | Python RAG assistant over 265 pages of the EU AI Act, GDPR and German DSK guidance; asks in English or German get answers in the same language with page citations. Measured on 80 test questions: correct page in top 5 for 91% (cross-language 12% → 92% after query translation), 80–86% of answers cite the correct page, 10/10 off-topic and attack questions refused, 8/8 hidden prompt-injection attacks resisted; LLM-as-judge evaluation; 30 automated tests; [live demo](https://ask-the-rules.streamlit.app) |
 
 **Live demo: [ask-the-rules.streamlit.app](https://ask-the-rules.streamlit.app)**
 
@@ -216,7 +214,7 @@ python src/eval_redteam.py
 
 ## Tools
 
-Python · pdfplumber · sentence-transformers (multilingual-e5-small) · ChromaDB · NumPy · Google Gemini API · Streamlit · pytest · GitHub Actions · Git/GitHub
+SQL · Python (pandas, NumPy) · Power BI (DAX, Power Query) · Tableau · Looker Studio · Excel · Power Automate · n8n · Google Gemini API · ChromaDB · sentence-transformers · Streamlit · pytest · GitHub Actions · Playwright · Git
 
 ## Next steps
 
