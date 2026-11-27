@@ -109,6 +109,26 @@ h1 { letter-spacing: -0.02em; }
 .stat-num { font-size: 1.35rem; font-weight: 600; color: #1f2328; line-height: 1.2; }
 .stat-label { font-size: 0.72rem; color: #5b6573; line-height: 1.3; }
 .footer { color: #6e7781; font-size: 0.78rem; line-height: 1.6; }
+/* ---------- animations (CSS only; switched off for "reduce motion") ---------- */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(0.6); } 70% { opacity: 1; transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes growLine { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.hero-title, .hero-sub { animation: fadeUp .5s ease-out both; }
+.hero-sub { animation-delay: .08s; }
+.pill { animation: fadeUp .4s ease-out both; }
+.pill:nth-child(1) { animation-delay: .15s; } .pill:nth-child(2) { animation-delay: .22s; }
+.pill:nth-child(3) { animation-delay: .29s; } .pill:nth-child(4) { animation-delay: .36s; }
+.stat { animation: fadeUp .45s ease-out both; }
+.stat:nth-child(2) { animation-delay: .08s; } .stat:nth-child(3) { animation-delay: .16s; } .stat:nth-child(4) { animation-delay: .24s; }
+.answer-card, .refusal-card { position: relative; animation: fadeUp .45s ease-out both; }
+.answer-card .cite { animation: pop .35s ease-out .35s both; }
+.via-badge { animation: pop .45s ease-out .55s both; }
+.src-card { animation: fadeUp .45s ease-out both; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.src-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(31, 35, 40, .08); border-color: #c4ccd5; }
+.stButton > button:hover, button[data-testid="stBaseButton-secondary"]:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(42, 120, 214, .15); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
 </style>
 """
 
@@ -254,7 +274,7 @@ with st.sidebar:
     st.markdown(
         "<div class='stat-grid'>"
         "<div class='stat'><div class='stat-num'>91%</div><div class='stat-label'>correct page in top 5 (64/70)</div></div>"
-        "<div class='stat'><div class='stat-num'>77–79%</div><div class='stat-label'>correct page cited (2 runs)</div></div>"
+        "<div class='stat'><div class='stat-num'>80–86%</div><div class='stat-label'>correct page cited (2 runs)</div></div>"
         "<div class='stat'><div class='stat-num'>10/10</div><div class='stat-label'>off-topic and attack questions refused</div></div>"
         "<div class='stat'><div class='stat-num'>8/8</div><div class='stat-label'>hidden attacks in documents resisted</div></div>"
         "</div>",
@@ -370,7 +390,8 @@ if run and question:
             link_html = (f"<div class='src-link'><a href='{link}' target='_blank'>"
                          f"Open page {c['page']} in the official PDF ↗</a></div>") if link else ""
             cols[i % 2].markdown(
-                f"<div class='src-card'><div class='src-head'><span class='cite'>{n}</span> "
+                f"<div class='src-card' style='animation-delay:{0.25 + i * 0.12:.2f}s'>"   # one after another
+                f"<div class='src-head'><span class='cite'>{n}</span> "
                 f"<span style='color:{color}'>{name}</span> · page {c['page']}</div>"
                 f"<div class='src-quote'>\"{snippet}\"</div>{link_html}</div>",
                 unsafe_allow_html=True,

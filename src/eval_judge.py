@@ -13,6 +13,8 @@ Then Miril checks 10 answers by hand, to see if the judge can be trusted.
 
 Usage:
     python src/eval_judge.py                  # judge answers_500_translate.csv
+    python src/eval_judge.py --retry-errors   # judge again only the answers that got "error" (503)
+    python src/eval_judge.py --retry-errors --answers eval/results/answers_500_translate_fix_run1.csv
     python src/eval_judge.py --handcheck      # you label 10 random answers in the terminal (blind)
     python src/eval_judge.py --agreement      # show the agreement again
 """
@@ -153,6 +155,45 @@ def run_judge(answers_file):
     print("Next: python src/eval_judge.py --agreement   (or --handcheck to label 10 answers yourself)")
 
 
+def run_retry_errors(answers_file):
+    """Judge again only the rows with label "error" (Gemini overloaded) in the judge file that
+    belongs to answers_file (answers_X.csv -> judge_X.csv), then save and print the summary."""
+    import chromadb
+    from google import genai
+    from rag import GEMINI_MODEL
+
+    load_dotenv()
+    judge_file = OUT_DIR / answers_file.name.replace("answers_", "judge_")
+    rows = list(csv.DictReader(judge_file.open(encoding="utf-8")))
+    todo = [r for r in rows if r["judge_label"] == "error"]
+    print(f"{len(todo)} errors to judge again in {judge_file.name}\n")
+    if todo:
+        questions = {q["id"]: q for q in (json.loads(line) for line in QUESTIONS.open(encoding="utf-8"))}
+        collection = chromadb.PersistentClient(path="chroma_db").get_collection("chunks_500")
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        for r in todo:
+            q = questions[r["id"]]
+            reference = page_text(collection, q["doc"], q["correct_pages"])
+            r["judge_label"], r["judge_reason"] = judge(client, GEMINI_MODEL, q["question"], reference, r["answer"])
+            print(f"{r['id']}: {r['judge_label']}")
+            time.sleep(WAIT_SECONDS)
+        with judge_file.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(rows)
+
+    answers = list(csv.DictReader(answers_file.open(encoding="utf-8")))
+    n_answerable = sum(1 for r in answers if r["type"] == "answerable")
+    counts = {lab: sum(1 for r in rows if r["judge_label"] == lab) for lab in LABELS + ("unclear", "error")}
+    print(f"\nRESULTS (judge, {judge_file.name})")
+    for lab, n in counts.items():
+        if n or lab in LABELS:
+            print(f"Judged answers {lab:8} {pct(n, len(rows))}")
+    print(f"Correct answers out of all {n_answerable} answerable questions: {pct(counts['correct'], n_answerable)}")
+    print("Wrong or partial answers: " + ", ".join(
+        f"{r['id']} ({r['judge_label']})" for r in rows if r["judge_label"] in ("wrong", "partial")))
+
+
 def run_handcheck():
     """Show 10 random judged answers one by one (judge label hidden) and ask for your label."""
     rows = list(csv.DictReader(JUDGE_FILE.open(encoding="utf-8")))
@@ -201,10 +242,13 @@ def run_agreement():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--answers", default=str(OUT_DIR / "answers_500_translate.csv"))
+    parser.add_argument("--retry-errors", action="store_true", help="judge again only rows with label 'error'")
     parser.add_argument("--handcheck", action="store_true", help="label 10 random answers yourself (blind)")
     parser.add_argument("--agreement", action="store_true", help="show the agreement with your hand labels again")
     args = parser.parse_args()
-    if args.handcheck:
+    if args.retry_errors:
+        run_retry_errors(Path(args.answers))
+    elif args.handcheck:
         run_handcheck()
     elif args.agreement:
         run_agreement()

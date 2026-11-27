@@ -32,17 +32,18 @@ Chunk size 500 is still the best with translation (Hit@5: 500 = 91%, 1000 = 83%,
 
 ### Answers: v1 vs V2
 
-Gemini's answers change a little between runs, even at temperature 0, so V2 was measured **twice with the same code** and both runs are shown as a range.
+Gemini's answers change a little between runs, even at temperature 0, so the final V2 was measured **twice with the same code** and both runs are shown as a range.
 
-| 70 answerable + 10 refusal questions | v1: question only | **V2 (2 runs)** |
+| 70 answerable + 10 refusal questions | v1: question only | **V2 final (2 runs)** |
 |---|---|---|
-| Answered (not refused) | 46/70 (66%) | **59/69 to 63/70 (86 to 90%)** |
-| Correct page cited | 38/70 (54%) | **53/69 to 55/70 (77 to 79%)** |
-| Correct page cited, cross-language questions | 2/26 (8%) | 21/26 to 22/26 |
+| Answered (not refused) | 46/70 (66%) | **62/69 to 64/70 (90 to 91%)** |
+| Correct page cited | 38/70 (54%) | **55/69 to 60/70 (80 to 86%)** |
+| Correct page cited, cross-language questions | 2/26 (8%) | 22/26 to 25/26 |
 | Answer in the language of the question | 43/46 | **100% in both runs** |
+| Answers without any citation | 1/46 | **0 in both runs** |
 | Off-topic, near-topic and prompt-injection questions refused | 10/10 | **10/10 in both runs** |
 
-In run 2, one question (ai14) failed twice with a "503 overloaded" error from the free API, so it counts 69 questions.
+In run 2, one question (ai13) failed twice with a network error from the free API, so it counts 69 questions. Before the citation fix (see "What I learned"), two runs gave 77 to 79% correct page cited, and 2 to 4 answers had no citation at all.
 
 ### Is the answer actually correct? (LLM as a judge)
 
@@ -50,14 +51,14 @@ In run 2, one question (ai14) failed twice with a "503 overloaded" error from th
 
 | Judge labels (V2, prompt v2) | Run 1 | Run 2 |
 |---|---|---|
-| Correct | 44/63 | 45/59 |
-| Partial | 16 | 12 |
-| Wrong | 3 | 1 |
-| Correct out of all answerable questions | **44/70 (63%)** | **45/69 (65%)** |
+| Correct | 47/64 | 46/62 |
+| Partial | 15 | 13 |
+| Wrong | 2 | 3 |
+| Correct out of all 70 answerable questions | **47/70 (67%)** | **46/70 (66%)** |
 
-- **Only one answer is wrong in every run (ai16).** The other "wrong" labels in run 1 (gd09, gd10) were judged correct in run 2; for gd10 the judge even broke its own rule ("extra details are fine"). So about 3 labels flip between runs, which is a limitation of the judge, not only of the bot.
+- **Only one answer is wrong in every run (ai16).** The other "wrong" labels change between runs (gd15 in run 1; ki07 and rg01 in run 2). In earlier runs the judge even broke its own rule ("extra details are fine"), so about 3 labels flip between runs, which is a limitation of the judge, not only of the bot.
 - **I checked the judge.** 10 random labels were cross-checked against the real page text by a second model (Claude), **not by a human**. Judge prompt v1 agreed 7/10: all 3 differences were true but incomplete answers that the judge called correct. I made the judge stricter about incomplete answers; prompt v2 agreed 9/10. This prompt was tuned on the same 10 answers, so 9/10 is optimistic.
-- One judge call in run 2 (gd12) failed with a 503 error and is not counted.
+- Judge calls that failed with a "503 overloaded" error were judged again (`--retry-errors`), so every answered question has a label.
 
 ### Red-team test: attacks hidden inside documents
 
@@ -75,6 +76,7 @@ Hidden instructions do not work, but **false facts inside a document are the rea
 
 - **Cross-language search was the biggest problem, and translation fixed it.** The multilingual embedding model ranked chunks in the question's language first. Searching with the question and its translation raised cross-language Hit@5 from 12% to 92% without hurting same-language questions.
 - **Fixing one thing can break another.** After translation, 10 of 63 answers came in the wrong language (English questions about German guides got German answers). Telling the model the answer language fixed it (100%), but in the first run the bot then translated its fixed refusal sentence ("Ich don't know..."), so I made the refusal check more robust and added a test.
+- **A screenshot found the next bug.** An answer in the live app had no citation number. The evaluation files showed why: when Gemini translated the content into the answer language, it sometimes dropped the `[1]` numbers (4 of 63 answers in one run). A stricter prompt rule fixed it (0 answers without a citation in two runs), and correct page cited rose from 77 to 79% to 80 to 86%. The app also got a safety net: if an answer has no citation, it shows the 3 most similar pages.
 - **A wrong page leads to a confident wrong answer.** For "maximum fine for prohibited AI practices" the search finds the fines for *EU institutions* (EUR 1 500 000, Art. 100) instead of the general maximum (EUR 35 000 000 or 7%, Art. 99). This is the one answer that is wrong in every run.
 - **The evaluator needs evaluating too.** The first judge was too generous, and judge labels change between runs. A range from two runs is more honest than one exact number.
 - **I found a bug in my own evaluation (v1).** Gemini sometimes cites as `[1, 2]`; my first parser only counted `[1]`. Fixing it raised "correct page cited" from 31/50 to 37/50.
@@ -95,7 +97,7 @@ The first version was measured on 50 answerable and 10 refusal questions: correc
 - **DSK guides:** no licence is stated, so they are **not** stored in this repository. The app downloads them from the official DSK website when it starts and builds their part of the index in memory. If the download fails, the app answers from the EU texts only and shows a warning.
 - **Search:** exact cosine search with numpy over about 2,500 vectors (no database needed at this size).
 - **Limits:** questions are capped at 500 characters and 20 questions per visit to protect the free Gemini quota. The API key is stored as a Streamlit secret, never in the code.
-- **Speed:** about 3 s per question when the free Gemini API is not overloaded (median 2.6 s in V2 run 2), but up to 14.5 s on a busy evening (V2 run 1). After 12 hours without visitors the app sleeps and the first start takes about a minute.
+- **Speed:** about 5 s per question for a new question (median 4.4 and 5.0 s in the final runs, two Gemini calls each), but up to 14.5 s when the free API is overloaded. A question that was asked before (for example an example button) is answered instantly from a 24-hour cache. After 12 hours without visitors the app sleeps and the first start takes about a minute.
 
 ## Data and licence
 
@@ -122,16 +124,16 @@ The first version was measured on 50 answerable and 10 refusal questions: correc
 - **Test set** ([eval/questions.jsonl](eval/questions.jsonl)): 70 answerable questions (44 same-language, 26 cross-language; 20 of the cross-language questions are "twins", translations of existing questions with the same correct pages) plus 10 refusal questions (4 off-topic, 2 near-topic traps, 4 prompt-injection attacks).
 - **Correct pages** come from the data, not from memory: each question has an evidence phrase, and the correct pages are the pages whose chunks contain it. Label changes after review are documented in [eval/LABEL_CHANGES.md](eval/LABEL_CHANGES.md).
 - **Scripts:** retrieval (`src/eval_retrieval.py`, no LLM), answers (`src/eval_answers.py`), judge (`src/eval_judge.py`), red team (`src/eval_redteam.py`). Raw results for every run are in [eval/results/](eval/results/).
-- **Repeated runs:** the V2 answer evaluation and the judge were run twice with the same code (`answers_500_translate_run1.csv`, `answers_500_translate.csv`).
+- **Repeated runs:** the final V2 answer evaluation and the judge were run twice with the same code (`answers_500_translate_fix_run1.csv`, `answers_500_translate.csv`). The two runs before the citation fix are kept for comparison (`answers_500_translate_run1.csv` and the previous version of `answers_500_translate.csv` in the Git history).
 
 ## Tests
 
-29 unit tests with pytest ([tests/test_core.py](tests/test_core.py)) run on every push with GitHub Actions. They need no PDFs, no model and no API key, and cover:
+30 unit tests with pytest ([tests/test_core.py](tests/test_core.py)) run on every push with GitHub Actions. They need no PDFs, no model and no API key, and cover:
 
 - citation parsing, including the `[1, 2]` format that caused the evaluation bug
 - text cleaning and EUR-Lex header/footer removal
 - chunking: maximum size, overlap, no text lost
-- prompt building, the safety rules and the answer-language line
+- prompt building, the safety rules, the citation rule and the answer-language line
 - merging the results of the two searches, language detection (all 80 test questions), refusal detection, source-card snippets
 - the judge's answer parsing and the red-team checks
 - the test set itself (80 questions, 70 answerable, 10 refusal)
@@ -141,7 +143,7 @@ The first version was measured on 50 answerable and 10 refusal questions: correc
 - Small, self-written test set (80 questions); results are indicative, not statistically strong.
 - Answers and judge labels change slightly between runs; two runs give a range, not a confidence interval.
 - The judge is itself an LLM. Its spot check was done by a second model, not by a human, and its prompt was tuned on the same 10 answers.
-- 7 to 10 of 70 answerable questions are still refused. Most of these refusals are over-cautious: the right page was in the top 5 (5 of 7 in run 1, 7 of 10 in run 2).
+- 6 to 7 of 70 answerable questions are still refused. Most of these refusals are over-cautious: the right page was in the top 5 (4 of 6 in run 1, 6 of 7 in run 2).
 - One answer is consistently wrong (ai16, the AI Act fine from the wrong article).
 - A false sentence inside an indexed document can end up in an answer (red-team run 2).
 - Two Gemini calls per question; the free tier has rate limits and "503 overloaded" errors (one retry in the evaluation).
@@ -169,7 +171,7 @@ The first version was measured on 50 answerable and 10 refusal questions: correc
 │   ├── questions.jsonl      # 80 test questions with correct pages
 │   ├── LABEL_CHANGES.md     # documented label review
 │   └── results/             # raw CSV results of every run
-├── tests/test_core.py       # 29 unit tests
+├── tests/test_core.py       # 30 unit tests
 ├── .github/workflows/tests.yml
 ├── docs/                    # results card and app screenshot
 ├── SOURCES.md               # documents, links, licences
