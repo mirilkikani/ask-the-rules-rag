@@ -1,4 +1,4 @@
-# Ask the rules: a measured RAG assistant for EU AI and data protection rules
+# Ask the rules: EU AI Act & GDPR answers with page citations, in English and German
 
 [![tests](https://github.com/mirilkikani/ask-the-rules-rag/actions/workflows/tests.yml/badge.svg)](https://github.com/mirilkikani/ask-the-rules-rag/actions/workflows/tests.yml)
 

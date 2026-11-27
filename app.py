@@ -126,6 +126,44 @@ h1 { letter-spacing: -0.02em; }
 .src-card { animation: fadeUp .45s ease-out both; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
 .src-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(31, 35, 40, .08); border-color: #c4ccd5; }
 .stButton > button:hover, button[data-testid="stBaseButton-secondary"]:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(42, 120, 214, .15); }
+
+/* page open */
+@keyframes slideRight { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+@keyframes shine { from { background-position: 120% 0; } to { background-position: -20% 0; } }
+@keyframes growX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+[data-testid="stSidebarContent"] { animation: slideRight .55s ease-out both; }
+.eyebrow { animation: fadeUp .45s ease-out both; }
+.hero-title { background: linear-gradient(100deg, #1f2328 40%, #2a78d6 50%, #1f2328 60%); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: fadeUp .5s ease-out both, shine 1.6s ease-out .4s both; }
+.title-line { height: 3px; width: 64px; border-radius: 3px; background: #2a78d6; margin: -0.1rem 0 0.7rem; transform-origin: left; animation: growX .6s ease-out .3s both; }
+.tagline { color: #1f2328; font-size: 1.12rem; font-weight: 500; line-height: 1.5; margin-bottom: 0.3rem; animation: fadeUp .5s ease-out .12s both; }
+
+/* sidebar link buttons */
+.side-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.2rem 0 0.4rem; }
+.side-link { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; white-space: nowrap; border: 1px solid #d0d7de; border-radius: 999px;
+  font-size: 0.85rem; color: #1f2328 !important; text-decoration: none !important; background: #ffffff;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, color .15s ease; }
+.side-link:hover { transform: translateY(-2px); border-color: #2a78d6; color: #2a78d6 !important; box-shadow: 0 4px 12px rgba(42, 120, 214, .15); }
+.side-link:active { transform: scale(.95); }
+
+/* clicks and focus */
+.stButton > button:active, button[data-testid="stBaseButton-secondary"]:active,
+[data-testid="stFormSubmitButton"] > button:active { transform: scale(.95); }
+[data-testid="stFormSubmitButton"] > button { transition: transform .12s ease, box-shadow .15s ease; }
+[data-testid="stFormSubmitButton"] > button:hover { box-shadow: 0 4px 14px rgba(42, 120, 214, .3); }
+[data-testid="stTextInput"] input { transition: box-shadow .2s ease, border-color .2s ease; }
+[data-testid="stTextInput"] input:focus { box-shadow: 0 0 0 4px rgba(42, 120, 214, .15); }
+[data-testid="stExpander"] summary { transition: color .15s ease; }
+[data-testid="stExpander"] summary:hover { color: #2a78d6; }
+[data-testid="stExpanderDetails"] { animation: fadeUp .35s ease-out both; }
+
+/* while scrolling: appear when they come into view (Chrome, Edge, Safari; others just show them) */
+@supports (animation-timeline: view()) {
+  [data-testid="stExpander"], .footer, .scroll-in {
+    animation: fadeUp linear both; animation-timeline: view(); animation-range: entry 0% cover 20%;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -258,7 +296,11 @@ st.session_state.setdefault("count", 0)
 
 with st.sidebar:
     st.markdown("### Built by Miril Kikani")
-    st.markdown(f"[LinkedIn]({LINKEDIN_URL}) · [GitHub repo]({REPO_URL})")
+    st.markdown(
+        f"<div class='side-links'><a class='side-link' href='{LINKEDIN_URL}' target='_blank'>LinkedIn ↗</a>"
+        f"<a class='side-link' href='{REPO_URL}' target='_blank'>GitHub repo ↗</a></div>",
+        unsafe_allow_html=True,
+    )
     st.caption("M.Sc. Big Data and Business Analytics, FOM Essen")
 
     st.markdown("### How it works")
@@ -294,8 +336,10 @@ with st.sidebar:
 st.markdown(
     "<div class='eyebrow'>RAG assistant · EU AI Act · GDPR · DSK</div>"
     "<div class='hero-title'>Ask the rules</div>"
-    "<div class='hero-sub'>Ask a question in English or German. The answer comes only from the official "
-    "documents and shows the page it is based on.</div>"
+    "<div class='title-line'></div>"
+    "<div class='tagline'>EU AI Act &amp; GDPR answers with page citations, in English and German</div>"
+    "<div class='hero-sub'>Answers come only from the official documents and show the page they are "
+    "based on.</div>"
     + pill("265 pages", "#1f6fd1") + pill("English and German", "#1f6fd1")
     + pill("91% correct page in top 5", "#14866d") + pill("10/10 attacks refused", "#14866d"),
     unsafe_allow_html=True,
@@ -377,7 +421,7 @@ if run and question:
         # Safety net: the model sometimes forgets the [n] numbers. Show the most similar pages instead.
         shown = [1, 2, 3][:len(sources)]
     if shown:
-        st.markdown("#### Sources")
+        st.markdown("<h4 class='scroll-in'>Sources</h4>", unsafe_allow_html=True)
         if not cited:
             st.caption("The answer has no citation numbers, so these are the 3 most similar pages it was based on.")
         cols = st.columns(2)
