@@ -78,6 +78,7 @@ CSS = """
 html, body, [class*="css"], .stMarkdown, button, input, textarea { font-family: 'Inter', sans-serif; }
 .block-container, [data-testid="stMainBlockContainer"] { padding-top: 4.5rem; max-width: 860px; }
 .stDeployButton, [data-testid="stAppDeployButton"] { display: none; }
+[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"], [data-testid="stExpandSidebarButton"] { display: none; }
 h1 { letter-spacing: -0.02em; }
 
 .eyebrow { color: #5b6573; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.2rem; }
@@ -190,6 +191,14 @@ h1 { letter-spacing: -0.02em; }
 @supports (animation-timeline: view()) {
   .step, .big-stat, .doc { animation: scrollIn linear both; animation-timeline: view(); animation-range: entry 0% cover 22%; }
   .cmp-bar { animation: growX linear both; animation-timeline: view(); animation-range: entry 20% cover 45%; }
+}
+
+.limits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.limit { border: 1px solid #e3d5a8; background: #fffbf0; border-radius: 12px; padding: 0.7rem 0.9rem; font-size: 0.82rem; color: #3d3423; line-height: 1.45; }
+.limit b { color: #1f2328; }
+@media (max-width: 760px) { .limits { grid-template-columns: 1fr; } }
+@supports (animation-timeline: view()) {
+  .limit { animation: scrollIn linear both; animation-timeline: view(); animation-range: entry 0% cover 22%; }
 }
 
 /* clicks and focus */
@@ -346,38 +355,9 @@ def answer_html(text):
 
 # ---------- page setup ----------
 
-st.set_page_config(page_title="Ask the rules", page_icon="⚖️", layout="centered")
+st.set_page_config(page_title="Ask the rules", page_icon="⚖️", layout="centered", initial_sidebar_state="collapsed")
 st.markdown(CSS, unsafe_allow_html=True)
 st.session_state.setdefault("count", 0)
-
-with st.sidebar:
-    st.markdown("### How it works")
-    st.markdown(
-        "1. **Read** 265 pages of PDFs and split them into chunks with page numbers\n"
-        "2. **Embed** each chunk with a multilingual model (German + English)\n"
-        "3. **Translate** your question (English ↔ German) and **search** with both versions\n"
-        "4. **Answer** with Gemini, only from those chunks, with page citations"
-    )
-
-    st.markdown("### Measured quality")
-    st.caption("80 test questions (70 with known correct pages, 10 the bot must refuse)")
-    st.markdown(
-        "<div class='stat-grid'>"
-        "<div class='stat'><div class='stat-num'>91%</div><div class='stat-label'>correct page in top 5 (64/70)</div></div>"
-        "<div class='stat'><div class='stat-num'>80–86%</div><div class='stat-label'>correct page cited (2 runs)</div></div>"
-        "<div class='stat'><div class='stat-num'>10/10</div><div class='stat-label'>off-topic and attack questions refused</div></div>"
-        "<div class='stat'><div class='stat-num'>8/8</div><div class='stat-label'>hidden attacks in documents resisted</div></div>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("### Known limits")
-    st.markdown(
-        "- Two Gemini calls per question (translation + answer), so answers take a bit longer\n"
-        "- Sometimes refuses although the answer is there (about 1 in 10 test questions)\n"
-        "- AI Act in its original 2024 version\n"
-        "- Portfolio demo, not legal advice"
-    )
 
 # ---------- header ----------
 
@@ -401,7 +381,7 @@ if not dsk_ok:
 
 # ---------- examples + question ----------
 
-st.caption("Try an example")
+st.caption("Try an example · Ask in English, get the answer in English. Frag auf Deutsch, bekomme die Antwort auf Deutsch.")
 for col, (label, question_text) in zip(st.columns(len(EXAMPLES)), EXAMPLES):
     col.button(label, help=question_text, on_click=ask_example, args=(question_text,), width="stretch")
 
@@ -574,6 +554,22 @@ st.markdown(
               f"<div class='doc-name'>{name}</div><div class='doc-meta'>{meta}</div>"
               f"<a href='{PDF_URLS.get(key, REPO_URL)}' target='_blank'>Open the official PDF ↗</a></div>"
               for key, name, meta in DOCS)
+    + "</div></div>",
+    unsafe_allow_html=True,
+)
+
+LIMITS = [
+    ("Not legal advice", "A portfolio demo. Always check the official text before you rely on an answer."),
+    ("Sometimes too careful", "It refuses about 1 in 10 test questions although the answer is in the documents."),
+    ("One known wrong answer", "For the maximum AI Act fine it finds a fine from the wrong article (Art. 100 instead of Art. 99)."),
+    ("AI Act from 2024", "The original 2024 text is used; later changes are not included."),
+    ("About 5 seconds", "Each new question needs two Gemini calls (translation + answer). Repeated questions are instant."),
+    ("Free hosting", "The free tier has rate limits; at busy times Gemini can be slow for a moment."),
+]
+st.markdown(
+    "<div class='section'><div class='section-eyebrow'>Known limits</div>"
+    "<div class='section-title'>What it cannot do (yet)</div><div class='limits'>"
+    + "".join(f"<div class='limit'><b>{t}.</b> {d}</div>" for t, d in LIMITS)
     + "</div></div>",
     unsafe_allow_html=True,
 )
