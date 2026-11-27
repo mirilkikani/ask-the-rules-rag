@@ -6,3 +6,7 @@ __pycache__/
 .pytest_cache/
 data/processed/
 .streamlit/secrets.toml
+
+# raw screen recordings and temporary screenshots (only the GIF / final PNG go to GitHub)
+docs/*.mp4
+docs/app_screenshot_new.png

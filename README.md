@@ -2,6 +2,8 @@
 
 **Live demo: [ask-the-rules.streamlit.app](https://ask-the-rules.streamlit.app)**
 
+![Demo: a German question about the English AI Act, answered with a page citation; scrolling through the results; an off-topic question refused](docs/demo.gif)
+
 ![Results](docs/results_card.png)
 
 ## The question
