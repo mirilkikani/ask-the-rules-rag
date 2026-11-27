@@ -1,0 +1,22 @@
+name: keep demo awake
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"     # every 6 hours (UTC); the free app sleeps after ~12 h without visitors
+  workflow_dispatch:            # also allows a manual run from the Actions tab
+
+jobs:
+  visit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Open the app (and wake it up if needed)
+        run: python scripts/keep_awake.py https://ask-the-rules.streamlit.app
