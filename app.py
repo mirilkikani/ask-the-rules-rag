@@ -158,11 +158,22 @@ h1 { letter-spacing: -0.02em; }
 [data-testid="stExpander"] summary:hover { color: #2a78d6; }
 [data-testid="stExpanderDetails"] { animation: fadeUp .35s ease-out both; }
 
-/* while scrolling: appear when they come into view (Chrome, Edge, Safari; others just show them) */
+/* while scrolling (Chrome, Edge, Safari; other browsers simply show everything) */
+@keyframes scrollIn { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }
+.scroll-progress { display: none; }
 @supports (animation-timeline: view()) {
-  [data-testid="stExpander"], .footer, .scroll-in {
-    animation: fadeUp linear both; animation-timeline: view(); animation-range: entry 0% cover 20%;
+  /* every block in the page and the sidebar slides in when it comes into view */
+  [data-testid="stMain"] [data-testid="stElementContainer"],
+  [data-testid="stSidebarContent"] [data-testid="stElementContainer"],
+  [data-testid="stExpander"], .stat {
+    animation: scrollIn linear both; animation-timeline: view(); animation-range: entry 0% cover 18%;
   }
+  [data-testid="stElementContainer"]:has(.scroll-progress) { animation: none; }   /* keep the bar fixed */
+  /* thin progress bar at the top that fills while scrolling down */
+  [data-testid="stMain"] { scroll-timeline: --page block; }
+  .scroll-progress { display: block; position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 999990;
+    background: linear-gradient(90deg, #2a78d6, #8250df); transform-origin: left; transform: scaleX(0);
+    animation: growX linear both; animation-timeline: --page; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -333,6 +344,7 @@ with st.sidebar:
 
 # ---------- header ----------
 
+st.markdown("<div class='scroll-progress'></div>", unsafe_allow_html=True)
 st.markdown(
     "<div class='eyebrow'>RAG assistant · EU AI Act · GDPR · DSK</div>"
     "<div class='hero-title'>Ask the rules</div>"
