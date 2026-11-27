@@ -150,6 +150,48 @@ h1 { letter-spacing: -0.02em; }
 .built-by { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0.2rem 0 0.9rem; }
 .built-by-name { font-weight: 600; color: #1f2328; margin-right: 4px; }
 
+/* ---------- info sections below the question box ---------- */
+.section { margin: 2.6rem 0 0.4rem; }
+.section-eyebrow { color: #2a78d6; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.section-title { font-size: 1.45rem; font-weight: 600; letter-spacing: -0.02em; color: #1f2328; margin: 0.15rem 0 0.9rem; }
+.steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.step { position: relative; border: 1px solid #d8dee4; border-radius: 12px; padding: 0.8rem 0.75rem; background: #ffffff;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.step:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(31, 35, 40, .08); border-color: #c4ccd5; }
+.step-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%;
+  background: #e8f1fc; color: #1f6fd1; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.45rem; }
+.step-title { font-weight: 600; font-size: 0.92rem; color: #1f2328; margin-bottom: 0.2rem; }
+.step-text { font-size: 0.78rem; color: #57606a; line-height: 1.45; }
+.big-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.1rem; }
+.big-stat { border: 1px solid #d8dee4; border-radius: 12px; padding: 0.8rem 0.9rem; background: #ffffff; }
+.big-stat-num { font-size: 1.7rem; font-weight: 600; color: #1f2328; line-height: 1.15; }
+.big-stat-label { font-size: 0.76rem; color: #5b6573; line-height: 1.35; margin-top: 0.15rem; }
+.cmp { margin-bottom: 0.95rem; }
+.cmp-label { font-size: 0.86rem; color: #1f2328; font-weight: 500; margin-bottom: 0.3rem; }
+.cmp-row { display: grid; grid-template-columns: 34px 1fr 92px; align-items: center; gap: 8px; margin: 3px 0; }
+.cmp-tag { font-size: 0.72rem; color: #6e7781; font-weight: 600; }
+.cmp-track { height: 12px; background: #eef1f4; border-radius: 6px; overflow: hidden; }
+.cmp-bar { height: 100%; border-radius: 6px; transform-origin: left; animation: growX .9s ease-out .2s both; }
+.cmp-val { font-size: 0.78rem; color: #1f2328; font-weight: 600; }
+.note { font-size: 0.74rem; color: #6e7781; margin-top: 0.3rem; }
+.docs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.doc { border: 1px solid #d8dee4; border-left: 4px solid; border-radius: 0 12px 12px 0; padding: 0.75rem 0.95rem; background: #ffffff;
+  transition: transform .15s ease, box-shadow .15s ease; }
+.doc:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(31, 35, 40, .08); }
+.doc-name { font-weight: 600; font-size: 0.95rem; color: #1f2328; }
+.doc-meta { font-size: 0.78rem; color: #57606a; margin: 0.2rem 0 0.4rem; line-height: 1.45; }
+.doc a { font-size: 0.8rem; color: #2a78d6; text-decoration: none; }
+.doc a:hover { text-decoration: underline; }
+@media (max-width: 760px) {
+  .steps { grid-template-columns: 1fr 1fr; }
+  .big-stats { grid-template-columns: 1fr 1fr; }
+  .docs { grid-template-columns: 1fr; }
+}
+@supports (animation-timeline: view()) {
+  .step, .big-stat, .doc { animation: scrollIn linear both; animation-timeline: view(); animation-range: entry 0% cover 22%; }
+  .cmp-bar { animation: growX linear both; animation-timeline: view(); animation-range: entry 20% cover 45%; }
+}
+
 /* clicks and focus */
 .stButton > button:active, button[data-testid="stBaseButton-secondary"]:active,
 [data-testid="stFormSubmitButton"] > button:active { transform: scale(.95); }
@@ -470,6 +512,71 @@ if run and question:
             hide_index=True,
             width="stretch",
         )
+
+# ---------- info sections (slide in while scrolling) ----------
+
+STEPS = [
+    ("Read", "265 pages of 4 official PDFs, cleaned and split into chunks with page numbers"),
+    ("Embed", "Each chunk becomes a vector with a multilingual model (German + English)"),
+    ("Translate", "Your question is translated English ↔ German by Gemini"),
+    ("Search", "Both versions search the index; the 5 most similar chunks are kept"),
+    ("Answer", "Gemini answers only from those 5 chunks and cites the pages"),
+]
+st.markdown(
+    "<div class='section'><div class='section-eyebrow'>How it works</div>"
+    "<div class='section-title'>From 265 PDF pages to a cited answer</div><div class='steps'>"
+    + "".join(f"<div class='step'><div class='step-num'>{i}</div><div class='step-title'>{t}</div>"
+              f"<div class='step-text'>{d}</div></div>" for i, (t, d) in enumerate(STEPS, start=1))
+    + "</div></div>",
+    unsafe_allow_html=True,
+)
+
+
+def compare_rows(label, v1_pct, v1_text, v2_pct, v2_text):
+    """Two bars (v1 grey, V2 blue) that grow when they scroll into view."""
+    def row(tag, pct, text, color):
+        return (f"<div class='cmp-row'><span class='cmp-tag'>{tag}</span><div class='cmp-track'>"
+                f"<div class='cmp-bar' style='width:{pct}%;background:{color}'></div></div>"
+                f"<span class='cmp-val'>{text}</span></div>")
+    return (f"<div class='cmp'><div class='cmp-label'>{label}</div>"
+            + row("v1", v1_pct, v1_text, "#b9c0c9") + row("V2", v2_pct, v2_text, "#2a78d6") + "</div>")
+
+
+BIG_STATS = [("91%", "correct page in the top 5 (64 of 70)"), ("80–86%", "answers cite the correct page (2 runs)"),
+             ("10/10", "off-topic and attack questions refused"), ("8/8", "attacks hidden in documents resisted")]
+st.markdown(
+    "<div class='section'><div class='section-eyebrow'>Measured, not guessed</div>"
+    "<div class='section-title'>Tested on 80 questions with known answers</div><div class='big-stats'>"
+    + "".join(f"<div class='big-stat'><div class='big-stat-num'>{n}</div><div class='big-stat-label'>{l}</div></div>"
+              for n, l in BIG_STATS)
+    + "</div>"
+    + compare_rows("Question in one language, document in the other: correct page in the top 5", 12, "12% (3/26)", 92, "92% (24/26)")
+    + compare_rows("All questions: correct page in the top 5", 61, "61% (43/70)", 91, "91% (64/70)")
+    + compare_rows("The answer cites the correct page", 54, "54% (38/70)", 83, "80–86%")
+    + "<div class='note'>v1 = search with the question only. V2 = also search with the translated question, "
+      f"answer in the question's language, every sentence cited. Method and all raw results: "
+      f"<a href='{REPO_URL}' target='_blank'>GitHub</a>.</div></div>",
+    unsafe_allow_html=True,
+)
+
+DOCS = [
+    ("eu_ai_act_2024_1689_en.pdf", "EU AI Act", "Regulation (EU) 2024/1689 · 144 pages · English · © EU, CC BY 4.0"),
+    ("gdpr_2016_679_en.pdf", "GDPR", "Regulation (EU) 2016/679 · 88 pages · English · © EU, CC BY 4.0"),
+    ("dsk_oh_ki_datenschutz_2024_de.pdf", "DSK: KI und Datenschutz",
+     "Guidance of the German data protection authorities (May 2024) · 15 pages · German"),
+    ("dsk_oh_rag_2025_de.pdf", "DSK: RAG-Systeme",
+     "Guidance of the German data protection authorities (Oct 2025) · 18 pages · German"),
+]
+st.markdown(
+    "<div class='section'><div class='section-eyebrow'>Sources</div>"
+    "<div class='section-title'>Documents it answers from</div><div class='docs'>"
+    + "".join(f"<div class='doc' style='border-left-color:{DOC_COLORS.get(key, '#57606a')}'>"
+              f"<div class='doc-name'>{name}</div><div class='doc-meta'>{meta}</div>"
+              f"<a href='{PDF_URLS.get(key, REPO_URL)}' target='_blank'>Open the official PDF ↗</a></div>"
+              for key, name, meta in DOCS)
+    + "</div></div>",
+    unsafe_allow_html=True,
+)
 
 # ---------- footer ----------
 
